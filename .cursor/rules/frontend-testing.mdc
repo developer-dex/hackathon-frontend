@@ -1,0 +1,379 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Frontend Testing Standards
+
+## Overview
+This rule defines the standard testing procedures for the frontend application following the layered architecture principles. It provides comprehensive guidelines for testing all layers: Presentation, Application, Domain, and Infrastructure.
+
+## General Testing Principles
+
+1. **Test Pyramid Approach**
+   - Unit tests: ~70% (focus on small units of code)
+   - Integration tests: ~20% (testing interactions between components)
+   - E2E tests: ~10% (testing workflows from user perspective)
+
+2. **Behavior-Driven Testing**
+   - Focus on testing WHAT the code does, not HOW it does it
+   - Write tests from the user's or consumer's perspective
+   - Tests should survive refactoring of implementation details
+
+3. **Test Organization**
+   - Test files should be co-located with the code they test
+   - Use naming convention: `[filename].test.tsx/ts`
+   - Group tests logically using describe blocks
+   - Use descriptive test names following the pattern: "should [expected behavior] when [condition]"
+
+4. **Coverage Requirements**
+   - Minimum overall code coverage: 80%
+   - Critical business logic: 100% coverage
+   - All business rules must be explicitly tested
+   - All edge cases and error scenarios must be tested
+
+## Testing Tools
+
+- **Test Runner**: Vitest / Jest
+- **UI Testing**: React Testing Library
+- **User Interactions**: userEvent
+- **Mocking API**: MSW (Mock Service Worker)
+- **Assertions**: Jest/Vitest built-in matchers
+
+## Layer-Specific Testing Guidelines
+
+### 1. Presentation Layer (UI) Testing
+
+#### Component Test Structure
+
+```tsx
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { vi } from 'vitest'
+import ComponentName from './ComponentName'
+
+describe('ComponentName', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should render correctly with default props', () => {
+    render(<ComponentName />)
+    expect(screen.getByRole('button')).toBeInTheDocument()
+  })
+
+  it('should handle click events', async () => {
+    const onClickMock = vi.fn()
+    render(<ComponentName onClick={onClickMock} />)
+    
+    await userEvent.click(screen.getByRole('button'))
+    expect(onClickMock).toHaveBeenCalledTimes(1)
+  })
+})
+```
+
+#### UI Testing Best Practices
+
+1. **Test Component Rendering**
+   - Test different prop combinations
+   - Test conditional rendering
+   - Test component composition
+
+2. **Test User Interactions**
+   - Use userEvent over fireEvent when possible
+   - Test click, type, hover, and other user interactions
+   - Verify callbacks are called with correct parameters
+
+3. **Prefer Testing by Role**
+   - Use semantic queries: getByRole, getByLabelText, getByText
+   - Avoid testId when possible (use only as a last resort)
+   - Test what the user sees and interacts with
+
+4. **Testing Context Providers**
+   - Create test wrappers for context providers
+   - Provide mock values or real implementation with test data
+   - Test both connected and isolated components
+
+### 2. Application Layer Testing
+
+#### Use Case and Service Test Structure
+
+```tsx
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { createTaskUseCase } from './createTaskUseCase'
+import { TaskRepository } from '@/domain/interfaces/TaskRepository'
+import { InvalidTaskError } from '@/domain/errors/TaskErrors'
+
+describe('Application > UseCases > createTaskUseCase', () => {
+  let mockTaskRepository: TaskRepository
+
+  beforeEach(() => {
+    mockTaskRepository = {
+      createTask: vi.fn(),
+      getAllTasks: vi.fn(),
+      getTaskById: vi.fn(),
+      updateTask: vi.fn(),
+      deleteTask: vi.fn()
+    }
+  })
+
+  it('should create a task when valid data is provided', async () => {
+    const newTask = { id: '123', title: 'New Task', completed: false, priority: 'high', createdAt: expect.any(String) }
+    mockTaskRepository.createTask.mockResolvedValue(newTask)
+
+    const result = await createTaskUseCase(mockTaskRepository, 'New Task', 'high')
+    
+    expect(mockTaskRepository.createTask).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'New Task',
+      completed: false,
+      priority: 'high'
+    }))
+    expect(result).toEqual(newTask)
+  })
+
+  it('should throw InvalidTaskError when title is empty', async () => {
+    await expect(createTaskUseCase(mockTaskRepository, '', 'high'))
+      .rejects.toThrow(InvalidTaskError)
+    
+    expect(mockTaskRepository.createTask).not.toHaveBeenCalled()
+  })
+})
+```
+
+#### Context and Hook Testing
+
+```tsx
+import { renderHook, act } from '@testing-library/react'
+import { TaskProvider, useTasks } from './TaskContext'
+import { vi } from 'vitest'
+
+// Mock the use case and repository
+vi.mock('../useCases/createTaskUseCase', () => ({
+  createTaskUseCase: vi.fn()
+}))
+
+describe('TaskContext', () => {
+  it('should provide task state and actions', async () => {
+    const wrapper = ({ children }) => <TaskProvider>{children}</TaskProvider>
+    const { result } = renderHook(() => useTasks(), { wrapper })
+    
+    expect(result.current.tasks).toEqual([])
+    expect(result.current.loading).toBe(false)
+    expect(result.current.error).toBe(null)
+    expect(typeof result.current.createTask).toBe('function')
+  })
+  
+  it('should update state when createTask is called', async () => {
+    // Implementation
+  })
+})
+```
+
+#### Application Layer Testing Best Practices
+
+1. **Test Use Cases Independently**
+   - Mock all dependencies
+   - Test success and error paths
+   - Verify correct inputs are passed to dependencies
+
+2. **Test Context Providers**
+   - Test initial state
+   - Test state updates after actions
+   - Test error handling
+
+3. **Test Custom Hooks**
+   - Use renderHook from testing-library
+   - Test hook behavior and state changes
+   - Test cleanup functions
+
+### 3. Domain Layer Testing
+
+#### Entity and Value Object Test Structure
+
+```tsx
+import { describe, it, expect } from 'vitest'
+import { validateTask } from './taskValidator'
+
+describe('Domain > Validators > taskValidator', () => {
+  it('should return empty array for valid task', () => {
+    const validTask = {
+      title: 'Valid Task',
+      priority: 'high',
+    }
+    
+    const errors = validateTask(validTask)
+    expect(errors).toHaveLength(0)
+  })
+  
+  it('should return errors for invalid task', () => {
+    const invalidTask = {
+      title: '',
+      priority: 'invalid',
+    }
+    
+    const errors = validateTask(invalidTask)
+    expect(errors).toHaveLength(2)
+    expect(errors).toContain('Task title cannot be empty')
+    expect(errors).toContain('Task priority must be high, medium, or low')
+  })
+})
+```
+
+#### Domain Layer Testing Best Practices
+
+1. **Test All Validation Rules**
+   - Test valid and invalid inputs
+   - Test boundary conditions
+   - Use parameterized tests for multiple input variations
+
+2. **Test Business Logic**
+   - Test business rules enforcement
+   - Test calculated properties
+   - Test entity state transitions
+
+3. **Test Error Classes**
+   - Verify error inheritance
+   - Test error message formatting
+   - Test additional error properties
+
+### 4. Infrastructure Layer Testing
+
+#### Repository Test Structure
+
+```tsx
+import { describe, it, expect, afterEach } from 'vitest'
+import { ApiTaskRepository } from './ApiTaskRepository'
+import { server } from '@/infrastructure/api/mock/server'
+import { http, HttpResponse } from 'msw'
+
+describe('Infrastructure > Repositories > ApiTaskRepository', () => {
+  const apiClient = createApiClient('https://api.example.com')
+  const repository = new ApiTaskRepository(apiClient)
+  
+  afterEach(() => server.resetHandlers())
+  
+  it('should fetch all tasks', async () => {
+    const mockTasks = [
+      { id: '1', title: 'Task 1', is_completed: false, priority_level: 'high', created_at: '2023-01-01' },
+      { id: '2', title: 'Task 2', is_completed: true, priority_level: 'low', created_at: '2023-01-02' }
+    ]
+    
+    server.use(
+      http.get('/tasks', () => {
+        return HttpResponse.json(mockTasks)
+      })
+    )
+    
+    const tasks = await repository.getAllTasks()
+    
+    expect(tasks).toHaveLength(2)
+    expect(tasks[0]).toEqual({
+      id: '1',
+      title: 'Task 1',
+      completed: false,
+      priority: 'high',
+      createdAt: '2023-01-01'
+    })
+  })
+  
+  it('should handle error when fetching tasks fails', async () => {
+    server.use(
+      http.get('/tasks', () => {
+        return HttpResponse.error()
+      })
+    )
+    
+    await expect(repository.getAllTasks()).rejects.toThrow()
+  })
+})
+```
+
+#### Infrastructure Layer Testing Best Practices
+
+1. **Mock External API Calls**
+   - Use MSW to intercept and mock HTTP requests
+   - Test success and error responses
+   - Test different HTTP status codes
+
+2. **Test Data Transformation**
+   - Test mapping between API and domain models
+   - Test handling of missing or null fields
+   - Test handling of unexpected data formats
+
+3. **Test Local Storage**
+   - Mock localStorage when used
+   - Test saving, retrieving and removing data
+   - Test data serialization/deserialization
+
+## Testing Anti-Patterns to Avoid
+
+1. **Excessive Mocking**
+   - Only mock external dependencies, not the code under test
+   - Don't mock everything - use real implementations when practical
+
+2. **Testing Implementation Details**
+   - Focus on behavior, not implementation
+   - Avoid testing private methods directly
+   - Avoid asserting on internal state
+
+3. **Brittle Tests**
+   - Don't couple tests to implementation
+   - Avoid testing exact component structure
+   - Avoid testing third-party library internals
+
+4. **Test Duplication**
+   - Don't repeat the same test at different levels
+   - Each test should have a clear purpose
+   - Focus on the appropriate testing level
+
+## Example Test Setup
+
+### MSW Setup for API Mocking
+
+```tsx
+// src/infrastructure/api/mock/handlers.ts
+import { http, HttpResponse } from 'msw'
+
+export const handlers = [
+  http.get('/tasks', () => {
+    return HttpResponse.json([
+      { id: '1', title: 'Task 1', is_completed: false, priority_level: 'high', created_at: '2023-01-01' }
+    ])
+  }),
+  
+  http.post('/tasks', async ({ request }) => {
+    const data = await request.json()
+    return HttpResponse.json(
+      { id: '2', ...data, created_at: new Date().toISOString() },
+      { status: 201 }
+    )
+  })
+]
+
+// src/infrastructure/api/mock/server.ts
+import { setupServer } from 'msw/node'
+import { handlers } from './handlers'
+
+export const server = setupServer(...handlers)
+```
+
+### Test Utilities for Context Providers
+
+```tsx
+// src/test/utils.tsx
+import React, { ReactNode } from 'react'
+import { render } from '@testing-library/react'
+import { TaskProvider } from '@/application/contexts/TaskContext'
+
+export function renderWithProviders(ui: React.ReactElement) {
+  return render(
+    <TaskProvider>
+      {ui}
+    </TaskProvider>
+  )
+}
+```
+
+## Conclusion
+
+Following these testing standards ensures the quality, reliability, and maintainability of our frontend application. Each layer has specific testing approaches that target its unique concerns while maintaining overall consistency in testing philosophy. All developers must adhere to these guidelines to create robust, well-tested code that meets our quality standards.

@@ -1,0 +1,603 @@
+---
+description: 
+globs: src/infrastructure/**/*.ts
+alwaysApply: false
+---
+# Infrastructure Layer (Data Layer)
+
+## Overview
+The Infrastructure Layer is responsible for external communications, data persistence, and integration with third-party services. It implements interfaces defined in the Domain Layer and provides concrete implementations for data access, API communication, local storage, and external services.
+
+## Directory Structure
+```
+src/
+└── infrastructure/
+    ├── api/                # API client configuration and setup
+    │   ├── client/         # Base client setup (axios, fetch, etc.)
+    │   ├── endpoints/      # API endpoint definitions
+    │   └── mock/          # Mock API responses for testing
+    ├── repositories/       # Concrete implementations of domain repository interfaces
+    ├── http/               # HTTP utilities (axios/fetch configurations)
+    ├── storage/            # Local storage adapters
+    ├── mappers/            # Data transformation between API and domain formats
+    └── adapters/           # Adapters for third-party services
+```
+
+## Strict Rules and Guidelines
+
+### 1. Repository Implementation
+
+- **Interface Compliance**
+  - Each repository MUST implement an interface defined in the Domain Layer
+  - Repository methods MUST have the same signatures as defined in interfaces
+  - Repositories MUST NOT expose additional methods not in the interfaces
+  - Implementation details MUST NOT leak outside of repositories
+
+- **Separation of Concerns**
+  - Repositories MUST handle data transformation between API and domain formats
+  - Repositories MUST abstract away the details of HTTP requests or storage
+  - Repositories MUST NOT contain business logic
+  - Repositories MUST NOT directly modify UI state
+
+- **Error Handling**
+  - Infrastructure errors MUST be translated to domain errors when appropriate
+  - HTTP status codes SHOULD be mapped to relevant domain error types
+  - Connection errors SHOULD be handled gracefully
+  - Repositories SHOULD implement retry logic for transient failures
+
+- **Testability**
+  - Repositories MUST be testable with mock HTTP clients
+  - External dependencies SHOULD be injected, not directly instantiated
+  - Side effects SHOULD be isolated and controllable in tests
+  - Repositories SHOULD use interfaces for their dependencies
+
+### 2. API Client Design
+
+- **Centralized Configuration**
+  - Create a centralized API client to handle common concerns
+  - Base URL configuration MUST be configurable per environment
+  - Authentication handling SHOULD be consistent across all endpoints
+  - Error handling SHOULD be handled at the client level
+
+- **Request/Response Interception**
+  - Implement request interceptors for:
+    - Adding auth headers
+    - Request logging
+    - Request transformation
+  - Implement response interceptors for:
+    - Error handling
+    - Response transformation
+    - Response logging
+    - Session management
+
+- **Organization**
+  - API endpoints SHOULD be organized by domain (e.g., taskApi, userApi)
+  - API response types MUST be defined separately from domain entities
+  - API request types SHOULD be defined explicitly
+  - HTTP methods SHOULD be used appropriately (GET, POST, PUT, DELETE)
+
+- **Security**
+  - Sensitive data MUST NOT be logged
+  - Credentials MUST be securely stored
+  - Use HTTPS for all production API calls
+  - Implement CSRF protection for cookie-based auth
+
+### 3. Data Transformation
+
+- **Mapper Pattern**
+  - Create mappers to transform between API models and domain models
+  - Mappers SHOULD be pure functions
+  - Mappers SHOULD handle null/undefined values gracefully
+  - Mappers SHOULD preserve all required business data
+
+- **Type Safety**
+  - Use TypeScript types for both API and domain models
+  - Validate data before transformation when needed
+  - Handle edge cases like missing fields or unexpected formats
+  - Ensure proper date and number format conversions
+
+- **Naming Conventions**
+  - Mapper functions SHOULD follow consistent naming:
+    - `mapApiToDomain[EntityName]`
+    - `mapDomainToApi[EntityName]`
+  - API models SHOULD be suffixed with `ApiModel` or `Dto`
+  - Mapper functions SHOULD be grouped by entity in separate files
+
+### 4. Storage Adapters
+
+- **Abstraction**
+  - Create adapters for browser storage (localStorage, sessionStorage)
+  - Abstract storage behind domain-aligned interfaces
+  - Storage adapters SHOULD handle serialization/deserialization
+  - Implement fallbacks for when storage is unavailable
+
+- **Security**
+  - NEVER store sensitive information in localStorage
+  - Consider encryption for semi-sensitive local data
+  - Implement storage quotas and cleanup strategies
+  - Handle storage errors gracefully
+
+- **Organization**
+  - Group storage by domain concern
+  - Use consistent key naming conventions
+  - Implement versioning for stored data structures
+  - Consider time-to-live (TTL) for cached data
+
+### 5. Third-Party Integrations
+
+- **Adapter Pattern**
+  - Create adapters for third-party services
+  - Expose domain-aligned interfaces for these services
+  - Hide third-party implementation details behind adapters
+  - Make third-party services replaceable
+
+- **Configuration**
+  - External service configuration SHOULD be environment-specific
+  - Credentials SHOULD NOT be hardcoded
+  - Service endpoints SHOULD be configurable
+  - Implement timeouts for all external calls
+
+## Implementation Examples
+
+### API Client Example
+
+```tsx
+// api/client/apiClient.ts
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { getAuthToken } from '@/infrastructure/storage/authStorage';
+import { UnauthorizedError, NetworkError, ServerError } from '@/domain/errors/ApiErrors';
+
+// Base client configuration
+export const createApiClient = (
+  baseURL: string,
+  defaultConfig: AxiosRequestConfig = {}
+): AxiosInstance => {
+  const client = axios.create({
+    baseURL,
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    ...defaultConfig,
+  });
+
+  // Request interceptor - add auth token
+  client.interceptors.request.use(
+    (config) => {
+      const token = getAuthToken();
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // Response interceptor - transform errors
+  client.interceptors.response.use(
+    (response: AxiosResponse) => response,
+    (error: AxiosError) => {
+      if (!error.response) {
+        // Network error
+        return Promise.reject(new NetworkError('Network error occurred'));
+      }
+
+      const { status, data } = error.response;
+
+      switch (status) {
+        case 401:
+          return Promise.reject(new UnauthorizedError('Authentication required'));
+        case 403:
+          return Promise.reject(new UnauthorizedError('Insufficient permissions'));
+        case 404:
+          return Promise.reject(new Error('Resource not found'));
+        case 500:
+          return Promise.reject(new ServerError('Server error occurred'));
+        default:
+          return Promise.reject(
+            new Error(
+              data?.message || `Request failed with status code ${status}`
+            )
+          );
+      }
+    }
+  );
+
+  return client;
+};
+
+// Create and export default client instance
+export const apiClient = createApiClient(
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'
+);
+```
+
+### API Endpoints Example
+
+```tsx
+// api/endpoints/taskApi.ts
+import { apiClient } from '../client/apiClient';
+import { TaskApiResponse, TaskCreateRequest, TaskUpdateRequest } from '../types/taskApiTypes';
+
+export const taskApi = {
+  getAllTasks: async (): Promise<TaskApiResponse[]> => {
+    const response = await apiClient.get<TaskApiResponse[]>('/tasks');
+    return response.data;
+  },
+
+  getTaskById: async (id: string): Promise<TaskApiResponse> => {
+    const response = await apiClient.get<TaskApiResponse>(`/tasks/${id}`);
+    return response.data;
+  },
+
+  createTask: async (task: TaskCreateRequest): Promise<TaskApiResponse> => {
+    const response = await apiClient.post<TaskApiResponse>('/tasks', task);
+    return response.data;
+  },
+
+  updateTask: async (id: string, updates: TaskUpdateRequest): Promise<TaskApiResponse> => {
+    const response = await apiClient.put<TaskApiResponse>(`/tasks/${id}`, updates);
+    return response.data;
+  },
+
+  deleteTask: async (id: string): Promise<void> => {
+    await apiClient.delete(`/tasks/${id}`);
+  }
+};
+```
+
+### API Type Definitions Example
+
+```tsx
+// api/types/taskApiTypes.ts
+export interface TaskApiResponse {
+  id: string;
+  title: string;
+  description?: string;
+  is_completed: boolean; // Note snake_case for API
+  priority_level: string;
+  created_at: string;
+  due_date?: string | null;
+  tags: string[];
+}
+
+export interface TaskCreateRequest {
+  title: string;
+  description?: string;
+  priority_level: string;
+  due_date?: string;
+  tags?: string[];
+}
+
+export interface TaskUpdateRequest {
+  title?: string;
+  description?: string;
+  is_completed?: boolean;
+  priority_level?: string;
+  due_date?: string | null;
+  tags?: string[];
+}
+```
+
+### Mapper Example
+
+```tsx
+// mappers/taskMapper.ts
+import { Task } from '@/domain/entities/Task';
+import { TaskApiResponse, TaskCreateRequest, TaskUpdateRequest } from '../api/types/taskApiTypes';
+
+// Map from API format to domain model
+export const mapApiTaskToDomain = (apiTask: TaskApiResponse): Task => {
+  return {
+    id: apiTask.id,
+    title: apiTask.title,
+    description: apiTask.description,
+    completed: apiTask.is_completed,
+    priority: apiTask.priority_level as 'high' | 'medium' | 'low',
+    createdAt: apiTask.created_at,
+    dueDate: apiTask.due_date || undefined,
+    tags: apiTask.tags || [],
+  };
+};
+
+// Map from domain model to API create request
+export const mapDomainTaskToApiCreate = (task: Omit<Task, 'id'>): TaskCreateRequest => {
+  return {
+    title: task.title,
+    description: task.description,
+    priority_level: task.priority,
+    due_date: task.dueDate || undefined,
+    tags: task.tags,
+  };
+};
+
+// Map from domain model to API update request
+export const mapDomainTaskToApiUpdate = (
+  updates: Partial<Omit<Task, 'id'>>
+): TaskUpdateRequest => {
+  const apiUpdates: TaskUpdateRequest = {};
+  
+  if (updates.title !== undefined) apiUpdates.title = updates.title;
+  if (updates.description !== undefined) apiUpdates.description = updates.description;
+  if (updates.completed !== undefined) apiUpdates.is_completed = updates.completed;
+  if (updates.priority !== undefined) apiUpdates.priority_level = updates.priority;
+  if (updates.dueDate !== undefined) apiUpdates.due_date = updates.dueDate;
+  if (updates.tags !== undefined) apiUpdates.tags = updates.tags;
+  
+  return apiUpdates;
+};
+```
+
+### Repository Implementation Example
+
+```tsx
+// repositories/ApiTaskRepository.ts
+import { Task } from '@/domain/entities/Task';
+import { TaskRepository, TaskSearchCriteria } from '@/domain/interfaces/TaskRepository';
+import { TaskNotFoundError } from '@/domain/errors/TaskErrors';
+import { taskApi } from '../api/endpoints/taskApi';
+import {
+  mapApiTaskToDomain,
+  mapDomainTaskToApiCreate,
+  mapDomainTaskToApiUpdate
+} from '../mappers/taskMapper';
+
+export class ApiTaskRepository implements TaskRepository {
+  async getAllTasks(): Promise<Task[]> {
+    try {
+      const apiTasks = await taskApi.getAllTasks();
+      return apiTasks.map(mapApiTaskToDomain);
+    } catch (error) {
+      // Transform and rethrow errors
+      throw this.transformError(error);
+    }
+  }
+  
+  async searchTasks(criteria: TaskSearchCriteria): Promise<Task[]> {
+    // Implementation would use query parameters in API call
+    // For this example, we'll just filter locally from getAllTasks
+    try {
+      const allTasks = await this.getAllTasks();
+      return allTasks.filter(task => {
+        if (criteria.completed !== undefined && task.completed !== criteria.completed) {
+          return false;
+        }
+        if (criteria.priority && task.priority !== criteria.priority) {
+          return false;
+        }
+        // Additional filtering logic...
+        return true;
+      });
+    } catch (error) {
+      throw this.transformError(error);
+    }
+  }
+  
+  async getTaskById(id: string): Promise<Task | null> {
+    try {
+      const apiTask = await taskApi.getTaskById(id);
+      return mapApiTaskToDomain(apiTask);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('not found')) {
+        return null;
+      }
+      throw this.transformError(error);
+    }
+  }
+  
+  async createTask(task: Omit<Task, 'id'>): Promise<Task> {
+    try {
+      const apiRequest = mapDomainTaskToApiCreate(task);
+      const apiTask = await taskApi.createTask(apiRequest);
+      return mapApiTaskToDomain(apiTask);
+    } catch (error) {
+      throw this.transformError(error);
+    }
+  }
+  
+  async updateTask(id: string, updates: Partial<Omit<Task, 'id'>>): Promise<Task> {
+    try {
+      // Verify task exists
+      const existingTask = await this.getTaskById(id);
+      if (!existingTask) {
+        throw new TaskNotFoundError(id);
+      }
+      
+      const apiRequest = mapDomainTaskToApiUpdate(updates);
+      const apiTask = await taskApi.updateTask(id, apiRequest);
+      return mapApiTaskToDomain(apiTask);
+    } catch (error) {
+      throw this.transformError(error);
+    }
+  }
+  
+  async deleteTask(id: string): Promise<void> {
+    try {
+      await taskApi.deleteTask(id);
+    } catch (error) {
+      throw this.transformError(error);
+    }
+  }
+  
+  // Helper method to transform errors
+  private transformError(error: unknown): Error {
+    // Transform infrastructure errors to domain errors
+    if (error instanceof Error) {
+      // Specific error transformations can be added here
+      return error;
+    }
+    return new Error('Unknown error occurred');
+  }
+}
+```
+
+### Storage Adapter Example
+
+```tsx
+// storage/authStorage.ts
+import { AuthToken } from '@/domain/entities/AuthToken';
+
+const AUTH_TOKEN_KEY = 'auth_token';
+
+export const saveAuthToken = (token: AuthToken): void => {
+  try {
+    localStorage.setItem(AUTH_TOKEN_KEY, JSON.stringify({
+      value: token.value,
+      expiresAt: token.expiresAt
+    }));
+  } catch (error) {
+    console.error('Failed to save auth token to localStorage', error);
+  }
+};
+
+export const getAuthToken = (): AuthToken | null => {
+  try {
+    const tokenData = localStorage.getItem(AUTH_TOKEN_KEY);
+    if (!tokenData) return null;
+    
+    const { value, expiresAt } = JSON.parse(tokenData);
+    
+    // Check if token is expired
+    if (expiresAt && new Date(expiresAt) < new Date()) {
+      removeAuthToken();
+      return null;
+    }
+    
+    return { value, expiresAt };
+  } catch (error) {
+    console.error('Failed to retrieve auth token from localStorage', error);
+    return null;
+  }
+};
+
+export const removeAuthToken = (): void => {
+  try {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  } catch (error) {
+    console.error('Failed to remove auth token from localStorage', error);
+  }
+};
+```
+
+## Anti-Patterns to Avoid
+
+1. ❌ **Direct API Calls in Components**
+   ```tsx
+   // WRONG
+   const TaskList = () => {
+     const [tasks, setTasks] = useState([]);
+     
+     useEffect(() => {
+       // Direct API call in component
+       fetch('/api/tasks')
+         .then(res => res.json())
+         .then(setTasks);
+     }, []);
+     // ...
+   }
+   ```
+
+2. ❌ **Business Logic in Repositories**
+   ```tsx
+   // WRONG
+   class TaskRepositoryWithBusinessLogic implements TaskRepository {
+     async createTask(taskData: TaskCreateDTO): Promise<Task> {
+       // Business validation should be in domain, not here
+       if (taskData.title.length < 3) {
+         throw new Error('Title too short');
+       }
+       
+       // Business decision making should be in domain/application layer
+       if (taskData.dueDate && new Date(taskData.dueDate) < new Date()) {
+         taskData.priority = 'high';
+       }
+       
+       // API call
+       const response = await this.apiClient.post('/tasks', taskData);
+       return response.data;
+     }
+   }
+   ```
+
+3. ❌ **Hardcoded Configuration**
+   ```tsx
+   // WRONG
+   const apiClient = axios.create({
+     baseURL: 'https://api.production-server.com/v1', // Hardcoded URL
+     headers: {
+       'Authorization': 'Bearer abc123xyz', // Hardcoded credentials
+     }
+   });
+   ```
+
+## Correct Patterns
+
+1. ✅ **Proper Repository Pattern**
+   ```tsx
+   // CORRECT
+   export class ApiTaskRepository implements TaskRepository {
+     constructor(private apiClient: AxiosInstance) {}
+     
+     async getAllTasks(): Promise<Task[]> {
+       try {
+         const response = await this.apiClient.get('/tasks');
+         return response.data.map(mapApiTaskToDomain);
+       } catch (error) {
+         throw this.transformError(error);
+       }
+     }
+     
+     // Other methods...
+   }
+   
+   // Usage in application layer:
+   const taskRepository = new ApiTaskRepository(apiClient);
+   ```
+
+2. ✅ **Clean Separation with Mappers**
+   ```tsx
+   // CORRECT
+   // Domain model
+   interface Task {
+     id: string;
+     title: string;
+     completed: boolean;
+     dueDate?: Date;
+   }
+   
+   // API model
+   interface TaskApiModel {
+     id: string;
+     title: string;
+     is_completed: boolean;
+     due_date?: string;
+   }
+   
+   // Mapper
+   const mapApiToDomainTask = (api: TaskApiModel): Task => ({
+     id: api.id,
+     title: api.title,
+     completed: api.is_completed,
+     dueDate: api.due_date ? new Date(api.due_date) : undefined
+   });
+   ```
+
+3. ✅ **Environment-Based Configuration**
+   ```tsx
+   // CORRECT
+   const createApiClient = () => {
+     const baseURL = process.env.NEXT_PUBLIC_API_URL;
+     const client = axios.create({ baseURL });
+     
+     client.interceptors.request.use(config => {
+       // Get auth token from storage, not hardcoded
+       const token = getAuthToken();
+       if (token) {
+         config.headers.Authorization = `Bearer ${token.value}`;
+       }
+       return config;
+     });
+     
+     return client;
+   };
+   ```

@@ -1,0 +1,514 @@
+---
+description: 
+globs: src/domain/**/*.ts
+alwaysApply: false
+---
+# Domain Layer (Business Logic Layer)
+
+## Overview
+The Domain Layer contains the core business logic, entities, value objects, and business rules that are independent of UI, frameworks, and external systems. It represents the heart of the application and encapsulates the fundamental business concepts and rules.
+
+## Directory Structure
+```
+src/
+└── domain/
+    ├── entities/      // Core business entities (e.g., Task, User)
+    ├── valueObjects/  // Immutable objects with equality based on attributes
+    ├── errors/        // Domain-specific error types
+    ├── interfaces/    // Repository interfaces and other abstractions
+    └── validators/    // Business rule validators
+```
+
+## Strict Rules and Guidelines
+
+### 1. Entity Design
+
+- **Purity and Independence**
+  - Entities MUST be pure TypeScript/JavaScript objects or classes
+  - Entities MUST NOT import from Application, UI, or Infrastructure layers
+  - Entities MUST NOT have dependencies on frameworks or libraries
+  - Entities MUST be framework-agnostic and reusable
+
+- **Identity and Structure**
+  - Entities MUST have a unique identifier
+  - Entity properties MUST be clearly defined with TypeScript types/interfaces
+  - Related properties SHOULD be grouped in nested objects
+  - Optional properties MUST be marked as optional in interfaces
+
+- **Immutability**
+  - Entities SHOULD be immutable where possible
+  - For mutable entities, state changes SHOULD happen through explicit methods
+  - Avoid direct property modifications without validation
+  - Consider using a builder pattern for complex entity creation
+
+- **Business Logic Encapsulation**
+  - Entities SHOULD encapsulate their validation logic
+  - Business rules related to a single entity SHOULD be in that entity
+  - Domain behaviors SHOULD be modeled as methods on entities
+  - Security-critical validation MUST be performed in the domain layer
+
+### 2. Value Object Design
+
+- **Immutability**
+  - Value objects MUST be immutable
+  - Once created, a value object cannot be altered
+  - Any "modification" MUST return a new instance
+
+- **Equality By Value**
+  - Value objects MUST have equality based on attributes, not identity
+  - Two value objects with the same attributes MUST be considered equal
+  - Implement equals() method for complex value comparisons
+
+- **Self-Validation**
+  - Value objects MUST validate themselves during creation
+  - Value objects MUST reject invalid states by throwing domain errors
+  - Validation MUST occur at construction time
+  - No setters or methods that could create invalid state
+
+- **Common Examples**
+  - Use value objects for concepts like Email, PhoneNumber, Address, Money
+  - Create value objects for domain concepts like Priority, Status, Rating
+
+### 3. Repository Interface Design
+
+- **Abstract Data Access**
+  - Repository interfaces MUST be defined in the domain layer
+  - Repository implementations MUST be in the infrastructure layer
+  - Domain code MUST only depend on repository interfaces, never implementations
+
+- **Entity-Centric Methods**
+  - Repository methods SHOULD be named using ubiquitous language
+  - Methods SHOULD use domain entities as parameters and return types
+  - Avoid leaking infrastructure concerns (like pagination tokens) into interfaces
+  - Use domain-specific filtering and sorting options
+
+- **Error Handling**
+  - Repository interfaces SHOULD define expected error types
+  - Network or database errors SHOULD be translated to domain errors
+  - Not-found conditions SHOULD be represented in domain terms
+
+### 4. Error Design
+
+- **Error Hierarchy**
+  - Create a DomainError base class for all domain errors
+  - Extend DomainError for specific error types
+  - Group related errors in appropriate modules
+  - Include context information relevant to the error
+
+- **Error Messages**
+  - Error messages MUST be clear and business-oriented
+  - Technical details SHOULD be avoided in user-facing errors
+  - Include values that caused the error when helpful
+  - Error messages SHOULD help guide towards resolution
+
+- **Error Types**
+  - ValidationError: For invalid input data
+  - NotFoundError: When entities can't be located
+  - AuthorizationError: For permission issues
+  - BusinessRuleViolationError: When business rules are violated
+
+### 5. Validators Design
+
+- **Separation of Concerns**
+  - Create validator classes/functions for complex validation logic
+  - One validator per entity or value object type
+  - Validators SHOULD focus on business rules, not technical validation
+  - Reuse validators when common validation is needed
+
+- **Return Values**
+  - Validators SHOULD return either validation errors or null/empty array
+  - Alternatively, validators can throw typed exceptions
+  - Use consistent validation result structure throughout the domain
+  - Consider returning all validation errors, not just the first one
+
+## Implementation Examples
+
+### Entity Example
+
+```tsx
+// Task.ts (Interface approach)
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+  priority: 'high' | 'medium' | 'low';
+  createdAt: string;
+  dueDate?: string | null;
+  tags: string[];
+}
+
+// Task.ts (Class approach - alternative)
+export class Task {
+  readonly id: string;
+  readonly title: string;
+  readonly description?: string;
+  readonly completed: boolean;
+  readonly priority: 'high' | 'medium' | 'low';
+  readonly createdAt: string;
+  readonly dueDate?: string | null;
+  readonly tags: string[];
+  
+  constructor(params: {
+    id: string;
+    title: string;
+    description?: string;
+    completed?: boolean;
+    priority?: 'high' | 'medium' | 'low';
+    createdAt?: string;
+    dueDate?: string | null;
+    tags?: string[];
+  }) {
+    // Validation could happen here
+    if (!params.title || params.title.trim().length === 0) {
+      throw new InvalidTaskError('Task title cannot be empty');
+    }
+    
+    this.id = params.id;
+    this.title = params.title;
+    this.description = params.description;
+    this.completed = params.completed ?? false;
+    this.priority = params.priority ?? 'medium';
+    this.createdAt = params.createdAt ?? new Date().toISOString();
+    this.dueDate = params.dueDate ?? null;
+    this.tags = params.tags ?? [];
+  }
+  
+  complete(): Task {
+    return new Task({
+      ...this,
+      completed: true
+    });
+  }
+  
+  changePriority(priority: 'high' | 'medium' | 'low'): Task {
+    return new Task({
+      ...this,
+      priority
+    });
+  }
+  
+  isOverdue(): boolean {
+    if (!this.dueDate) return false;
+    return new Date(this.dueDate) < new Date();
+  }
+}
+```
+
+### Value Object Example
+
+```tsx
+// Email.ts
+export class Email {
+  private readonly value: string;
+  
+  private static readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  
+  constructor(email: string) {
+    if (!email || !Email.EMAIL_REGEX.test(email)) {
+      throw new InvalidEmailError(`Invalid email format: ${email}`);
+    }
+    
+    this.value = email.toLowerCase();
+  }
+  
+  equals(other: Email): boolean {
+    return this.value === other.value;
+  }
+  
+  toString(): string {
+    return this.value;
+  }
+  
+  get domain(): string {
+    return this.value.split('@')[1];
+  }
+  
+  get localPart(): string {
+    return this.value.split('@')[0];
+  }
+  
+  static isValid(email: string): boolean {
+    return Email.EMAIL_REGEX.test(email);
+  }
+}
+```
+
+### Repository Interface Example
+
+```tsx
+// TaskRepository.ts
+import { Task } from '../entities/Task';
+
+export interface TaskSearchCriteria {
+  completed?: boolean;
+  priority?: 'high' | 'medium' | 'low';
+  dueBefore?: string;
+  dueAfter?: string;
+  tags?: string[];
+}
+
+export interface TaskRepository {
+  getAllTasks(): Promise<Task[]>;
+  searchTasks(criteria: TaskSearchCriteria): Promise<Task[]>;
+  getTaskById(id: string): Promise<Task | null>;
+  createTask(task: Omit<Task, 'id'>): Promise<Task>;
+  updateTask(id: string, updates: Partial<Omit<Task, 'id'>>): Promise<Task>;
+  deleteTask(id: string): Promise<void>;
+}
+```
+
+### Error Example
+
+```tsx
+// DomainError.ts
+export class DomainError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+    
+    // This is needed in TypeScript to maintain the correct prototype chain
+    Object.setPrototypeOf(this, DomainError.prototype);
+  }
+}
+
+// TaskErrors.ts
+import { DomainError } from './DomainError';
+
+export class InvalidTaskError extends DomainError {
+  constructor(message: string) {
+    super(message);
+    Object.setPrototypeOf(this, InvalidTaskError.prototype);
+  }
+}
+
+export class TaskNotFoundError extends DomainError {
+  constructor(taskId: string) {
+    super(`Task with ID ${taskId} not found`);
+    Object.setPrototypeOf(this, TaskNotFoundError.prototype);
+  }
+}
+
+export class TaskUpdateError extends DomainError {
+  constructor(taskId: string, reason: string) {
+    super(`Failed to update task ${taskId}: ${reason}`);
+    Object.setPrototypeOf(this, TaskUpdateError.prototype);
+  }
+}
+```
+
+### Validator Example
+
+```tsx
+// TaskValidator.ts
+export interface TaskValidationData {
+  title?: string;
+  description?: string;
+  priority?: string;
+  dueDate?: string;
+}
+
+export class TaskValidator {
+  static validateTaskCreation(data: TaskValidationData): string[] {
+    const errors: string[] = [];
+    
+    // Title validation
+    if (!data.title || data.title.trim().length === 0) {
+      errors.push('Task title cannot be empty');
+    } else if (data.title.length > 100) {
+      errors.push('Task title cannot exceed 100 characters');
+    }
+    
+    // Priority validation
+    if (data.priority && !['high', 'medium', 'low'].includes(data.priority)) {
+      errors.push('Task priority must be high, medium, or low');
+    }
+    
+    // Due date validation
+    if (data.dueDate) {
+      const dueDate = new Date(data.dueDate);
+      if (isNaN(dueDate.getTime())) {
+        errors.push('Invalid due date format');
+      } else if (dueDate < new Date()) {
+        errors.push('Due date cannot be in the past');
+      }
+    }
+    
+    return errors;
+  }
+  
+  static validateTaskUpdate(data: TaskValidationData): string[] {
+    const errors: string[] = [];
+    
+    // Title validation (only if provided)
+    if (data.title !== undefined) {
+      if (data.title.trim().length === 0) {
+        errors.push('Task title cannot be empty');
+      } else if (data.title.length > 100) {
+        errors.push('Task title cannot exceed 100 characters');
+      }
+    }
+    
+    // Additional validations for other fields...
+    
+    return errors;
+  }
+}
+```
+
+## Anti-Patterns to Avoid
+
+1. ❌ **External Dependencies in Domain Entities**
+   ```tsx
+   // WRONG
+   import axios from 'axios'; // External dependency in domain
+   import { formatDate } from 'date-fns'; // UI/formatting concern
+   
+   export class Task {
+     // ...
+     
+     async save() {
+       // Direct API call in entity
+       await axios.post('/api/tasks', this);
+     }
+     
+     getFormattedDueDate() {
+       // UI formatting concern in entity
+       return formatDate(new Date(this.dueDate), 'yyyy-MM-dd');
+     }
+   }
+   ```
+
+2. ❌ **Business Logic in DTOs**
+   ```tsx
+   // WRONG
+   // This is a DTO not a domain entity, but contains business logic
+   export interface TaskDTO {
+     id: string;
+     title: string;
+     completed: boolean;
+     
+     // Business logic shouldn't be in DTOs
+     isValid(): boolean;
+     complete(): void;
+   }
+   ```
+
+3. ❌ **Anemic Domain Model**
+   ```tsx
+   // WRONG - Just data with no behavior
+   export interface Task {
+     id: string;
+     title: string;
+     completed: boolean;
+     priority: string;
+     dueDate: string;
+   }
+   
+   // Business logic placed outside the entity
+   export function completeTask(task: Task) {
+     return { ...task, completed: true };
+   }
+   
+   export function isTaskOverdue(task: Task) {
+     return new Date(task.dueDate) < new Date();
+   }
+   ```
+
+## Correct Patterns
+
+1. ✅ **Rich Domain Model with Behavior**
+   ```tsx
+   // CORRECT
+   export class Task {
+     constructor(
+       readonly id: string,
+       readonly title: string,
+       readonly completed: boolean = false,
+       readonly priority: 'high' | 'medium' | 'low' = 'medium',
+       readonly dueDate?: string
+     ) {
+       if (!title.trim()) {
+         throw new InvalidTaskError('Task title cannot be empty');
+       }
+     }
+     
+     complete(): Task {
+       return new Task(
+         this.id,
+         this.title,
+         true,
+         this.priority,
+         this.dueDate
+       );
+     }
+     
+     changePriority(priority: 'high' | 'medium' | 'low'): Task {
+       return new Task(
+         this.id,
+         this.title,
+         this.completed,
+         priority,
+         this.dueDate
+       );
+     }
+     
+     isOverdue(): boolean {
+       if (!this.dueDate) return false;
+       return new Date(this.dueDate) < new Date();
+     }
+   }
+   ```
+
+2. ✅ **Proper Value Object**
+   ```tsx
+   // CORRECT
+   export class Priority {
+     private constructor(readonly value: 'high' | 'medium' | 'low') {}
+     
+     static HIGH = new Priority('high');
+     static MEDIUM = new Priority('medium');
+     static LOW = new Priority('low');
+     
+     static fromString(value: string): Priority {
+       switch (value.toLowerCase()) {
+         case 'high': return Priority.HIGH;
+         case 'low': return Priority.LOW;
+         case 'medium':
+         default: return Priority.MEDIUM;
+       }
+     }
+     
+     equals(other: Priority): boolean {
+       return this.value === other.value;
+     }
+     
+     toString(): string {
+       return this.value;
+     }
+     
+     isHigherThan(other: Priority): boolean {
+       const priorities = { 'high': 3, 'medium': 2, 'low': 1 };
+       return priorities[this.value] > priorities[other.value];
+     }
+   }
+   ```
+
+3. ✅ **Clean Repository Interface**
+   ```tsx
+   // CORRECT
+   export interface TaskRepository {
+     findById(id: string): Promise<Task | null>;
+     findAll(filters?: TaskFilters): Promise<Task[]>;
+     save(task: Task): Promise<Task>;
+     remove(taskId: string): Promise<void>;
+   }
+   
+   export interface TaskFilters {
+     completed?: boolean;
+     priority?: Priority;
+     dueBefore?: Date;
+     dueAfter?: Date;
+     limit?: number;
+   }
+   ```

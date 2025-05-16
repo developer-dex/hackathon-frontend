@@ -1,0 +1,147 @@
+---
+description: 
+globs: src/**/**/*
+alwaysApply: false
+---
+# Atomic Folder Structure for Frontend
+
+## Overview
+This rule defines the mandatory folder structure for frontend development using atomic design principles and clean architecture.
+
+## Root Structure
+
+```
+src/
+├── pages/                      # Next.js page router (MUST match route structure)
+├── components/                 # All UI components using Atomic Design
+├── application/                # Application layer (business logic)
+├── domain/                     # Domain layer (business entities)
+├── infrastructure/             # Infrastructure layer (external communication)
+├── styles/                     # Global styles
+└── public/                     # Static assets
+```
+
+## Atomic Components Structure
+
+```
+components/
+├── atoms/                  # Smallest indivisible components
+│   ├── Button/
+│   ├── Input/
+│   ├── Typography/
+│   └── Icon/
+│
+├── molecules/              # Groups of atoms functioning together
+│   ├── SearchBar/
+│   ├── Card/
+│   ├── FormField/
+│   └── Notification/
+│
+├── organisms/              # Complex components made of molecules and atoms
+│   ├── Header/
+│   ├── Footer/
+│   ├── Sidebar/
+│   ├── ProductGrid/
+│   └── FormSection/
+│
+└── templates/              # Page layouts that arrange organisms
+    ├── MainLayout/
+    ├── DashboardLayout/
+    └── AuthLayout/
+```
+
+## Component Implementation Rules
+
+### 1. Component Organization
+
+#### Atoms
+- Must be the smallest, most basic UI elements
+- Examples: buttons, inputs, labels, icons, typography elements
+- Must not depend on other components (except for other atoms in specific cases)
+- Must be highly reusable across the entire application
+
+#### Molecules
+- Must be composed of multiple atoms and/or other molecules
+- Examples: search bars, form fields, cards, menu items
+- Must represent simple UI patterns that can be reused
+
+#### Organisms
+- Must be larger, more complex components composed of molecules and/or atoms
+- Examples: headers, footers, sidebars, product grids, forms
+- Can be specific to certain features or pages
+
+#### Templates
+- Must define the layout structure of a page
+- Must consist of organisms, molecules, and atoms arranged in a layout
+- Must not contain specific implementation details, only the arrangement of components
+- Should accept children and props to populate the layout with content
+
+### 2. Component Directory Structure
+
+Each component must have its own directory with:
+
+```
+ComponentName/
+├── index.ts/tsx               # Re-exports the component
+├── ComponentName.tsx          # Component implementation
+├── ComponentName.test.tsx     # Component tests
+├── ComponentName.module.css   # Component-specific styles (if applicable)
+└── ComponentName.types.ts     # Component type definitions (optional)
+```
+
+### 3. Component Naming and Exports
+
+- **Component Naming**: All component files must use PascalCase (e.g., `Button.tsx`, `SearchBar.tsx`)
+- **Directory Naming**: 
+  - Component directories must use PascalCase (e.g., `Button/`, `SearchBar/`)
+  - Non-component directories must use camelCase (e.g., `utils/`, `hooks/`)
+- **Exports**: All components must have a named export matching the component name
+- **Index Files**: Each component directory must have an `index.ts/tsx` file that re-exports the component
+
+### 4. Component Implementation Example
+
+```tsx
+// Button/Button.tsx
+import React from 'react';
+import styles from './Button.module.css';
+import { ButtonProps } from './Button.types';
+
+export const Button: React.FC<ButtonProps> = ({ 
+  children, 
+  variant = 'primary',
+  size = 'medium',
+  onClick,
+  disabled = false,
+  ...props 
+}) => {
+  return (
+    <button
+      className={`${styles.button} ${styles[variant]} ${styles[size]}`}
+      onClick={onClick}
+      disabled={disabled}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+```
+
+```tsx
+// Button/index.tsx
+export { Button } from './Button';
+export type { ButtonProps } from './Button.types';
+```
+
+```tsx
+// Button/Button.types.ts
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'small' | 'medium' | 'large';
+  children: React.ReactNode;
+}
+```
+
+## Exceptions
+
+Exceptions to these rules must be documented and approved by the team lead or architecture owner. The documentation should include the reason for the exception and how it relates to the project's architecture.

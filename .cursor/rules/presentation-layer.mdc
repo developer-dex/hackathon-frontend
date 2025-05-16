@@ -1,0 +1,297 @@
+---
+description: 
+globs: src/components/**/**.tsx,src/pages/**/*.tsx,src/styles/*.css
+alwaysApply: false
+---
+# Presentation Layer (UI Layer)
+
+## Overview
+The Presentation Layer is responsible for displaying data and capturing user input. It contains all UI components, pages, and layouts and must follow atomic design principles.
+
+## Directory Structure
+```
+src/
+├── components/      // Reusable UI components using atomic design
+│   ├── atoms/       // Smallest indivisible components
+│   ├── molecules/   // Groups of atoms functioning together
+│   ├── organisms/   // Complex components made of molecules/atoms
+│   └── templates/   // Page layouts that arrange organisms
+├── pages/           // Next.js page router
+└── styles/          // Global styles and themes
+```
+
+## Strict Rules and Guidelines
+
+### 1. Component Design Principles
+
+- **Functional Components Only**
+  - All components MUST be functional components using React hooks
+  - Class components are NOT allowed under any circumstances
+
+- **Separation of Concerns**
+  - Components MUST NOT contain business logic
+  - Components MUST NOT perform data processing operations
+  - Components MUST NOT directly import or use repositories
+  - Components MUST NOT directly access API endpoints
+
+- **Props and Data Flow**
+  - Components MUST receive data and callback functions as props
+  - Components MUST use TypeScript interfaces to define prop types
+  - Required props MUST be explicitly marked with `?` for optional props
+  - Prop interfaces MUST be exported for reusability
+
+- **Styling Approach**
+  - Components MUST use CSS modules for component-specific styles
+  - Global styles MUST be placed in the styles directory
+  - Tailwind utility classes can be used for quick styling
+  - Avoid inline styles unless absolutely necessary
+
+### 2. Component File Structure
+
+Each component MUST have its own directory with:
+
+```
+ComponentName/
+├── index.tsx                 // Re-exports the component
+├── ComponentName.tsx         // Component implementation
+├── ComponentName.test.tsx    // Component tests
+├── ComponentName.module.css  // Component-specific styles
+└── ComponentName.types.ts    // Component type definitions
+```
+
+### 3. State Management
+
+- **Local UI State**
+  - Components SHOULD use React.useState only for UI-specific state
+  - Examples: form input values, toggle states, UI animations
+  - Local state MUST NOT include business data that belongs in context
+
+- **Business Data**
+  - Business data MUST come from context providers or props
+  - Components MUST NOT fetch or store business data locally
+  - Components MUST NOT manipulate business data structures
+
+- **Actions and Events**
+  - Components MUST dispatch actions through provided callbacks
+  - Components MUST NOT implement business logic in event handlers
+  - Event handlers SHOULD be concise and focused on UI concerns
+
+### 4. Component Categories
+
+- **Atoms** (smallest indivisible components)
+  - Buttons, inputs, labels, icons, typography elements
+  - MUST NOT depend on other components (except for other atoms in specific cases)
+  - MUST be highly reusable across the entire application
+  - MUST accept customization through props
+
+- **Molecules** (groups of atoms functioning together)
+  - Search bars, form fields, cards, menu items
+  - MUST be composed of multiple atoms and/or other molecules
+  - MUST represent simple UI patterns that can be reused
+  - MUST NOT contain application-specific business logic
+
+- **Organisms** (complex components)
+  - Headers, footers, sidebars, forms, product grids
+  - MUST be composed of molecules and/or atoms
+  - Can be specific to certain features or pages
+  - MUST receive all data and callbacks through props
+
+- **Templates** (page layouts)
+  - MUST define the layout structure of a page
+  - MUST consist of organisms, molecules, and atoms arranged in a layout
+  - MUST NOT contain specific implementation details
+  - MUST accept children and props to populate the layout with content
+
+### 5. Page Components
+
+- Pages MUST be kept minimal and focused on:
+  - Data fetching via hooks from the Application Layer
+  - Routing and navigation
+  - Composing template and organism components
+  - Error and loading state handling
+
+- Pages MUST NOT:
+  - Contain complex UI components directly
+  - Implement business logic
+  - Directly access repositories or API endpoints
+
+## Implementation Example
+
+```tsx
+// Button/Button.types.ts
+export interface ButtonProps {
+  /** Text or content to display inside the button */
+  children: React.ReactNode;
+  /** Visual variant of the button */
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+  /** Size variant of the button */
+  size?: 'small' | 'medium' | 'large';
+  /** Whether the button is disabled */
+  disabled?: boolean;
+  /** Click handler function */
+  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  /** Additional CSS class names */
+  className?: string;
+}
+
+// Button/Button.tsx
+import React from 'react';
+import styles from './Button.module.css';
+import { ButtonProps } from './Button.types';
+
+export const Button: React.FC<ButtonProps> = ({ 
+  children, 
+  variant = 'primary',
+  size = 'medium',
+  disabled = false,
+  onClick,
+  className = '',
+  ...props 
+}) => {
+  return (
+    <button
+      className={`${styles.button} ${styles[variant]} ${styles[size]} ${className}`}
+      disabled={disabled}
+      onClick={onClick}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
+
+// Button/index.tsx
+export { Button } from './Button';
+export type { ButtonProps } from './Button.types';
+
+// TaskItem/TaskItem.tsx (Molecule example)
+import React from 'react';
+import { Task } from '@/domain/entities/Task';
+import { Button } from '@/components/atoms/Button';
+import { Checkbox } from '@/components/atoms/Checkbox';
+import styles from './TaskItem.module.css';
+
+interface TaskItemProps {
+  task: Task;
+  onComplete: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+export const TaskItem: React.FC<TaskItemProps> = ({ 
+  task, 
+  onComplete, 
+  onDelete 
+}) => {
+  return (
+    <div className={styles.taskItem} data-priority={task.priority}>
+      <Checkbox
+        checked={task.completed}
+        onChange={() => onComplete(task.id)}
+        label={task.title}
+      />
+      <div className={styles.actions}>
+        <Button 
+          variant="danger" 
+          size="small" 
+          onClick={() => onDelete(task.id)}
+        >
+          Delete
+        </Button>
+      </div>
+    </div>
+  );
+};
+```
+
+## Common Anti-Patterns to Avoid
+
+1. ❌ **Direct API Calls in Components**
+   ```tsx
+   // WRONG
+   const TaskList = () => {
+     const [tasks, setTasks] = useState([]);
+     useEffect(() => {
+       fetch('/api/tasks').then(res => res.json()).then(setTasks);
+     }, []);
+     // ...
+   }
+   ```
+
+2. ❌ **Business Logic in Components**
+   ```tsx
+   // WRONG
+   const TaskForm = () => {
+     // Business validation should be in domain layer
+     const validateTask = (title) => {
+       if (title.length < 3) throw new Error('Title too short');
+       // ...
+     }
+     // ...
+   }
+   ```
+
+3. ❌ **Complex State Management in Components**
+   ```tsx
+   // WRONG
+   const Dashboard = () => {
+     const [tasks, setTasks] = useState([]);
+     const [categories, setCategories] = useState([]);
+     const [filteredTasks, setFilteredTasks] = useState([]);
+     
+     // Complex filtering logic should be in application layer
+     const filterTasksByCategory = (categoryId) => {
+       // ...
+     }
+     // ...
+   }
+   ```
+
+## Correct Patterns
+
+1. ✅ **Using Application Layer Hooks**
+   ```tsx
+   // CORRECT
+   const TaskList = () => {
+     const { tasks, loading, error, completeTask, deleteTask } = useTasks();
+     
+     if (loading) return <LoadingSpinner />;
+     if (error) return <ErrorMessage message={error.message} />;
+     
+     return (
+       <div>
+         {tasks.map(task => (
+           <TaskItem 
+             key={task.id} 
+             task={task} 
+             onComplete={completeTask}
+             onDelete={deleteTask}
+           />
+         ))}
+       </div>
+     );
+   }
+   ```
+
+2. ✅ **Separating UI and Business Logic**
+   ```tsx
+   // CORRECT
+   const TaskForm = () => {
+     const { createTask, isCreating, error } = useTasks();
+     const [title, setTitle] = useState('');
+     
+     const handleSubmit = (e) => {
+       e.preventDefault();
+       createTask(title)
+         .then(() => setTitle(''))
+         .catch(e => console.error(e));
+     }
+     
+     return (
+       <form onSubmit={handleSubmit}>
+         <Input value={title} onChange={e => setTitle(e.target.value)} />
+         <Button type="submit" disabled={isCreating}>Add Task</Button>
+         {error && <ErrorMessage message={error.message} />}
+       </form>
+     );
+   }
+   ```

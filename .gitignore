@@ -51,9 +51,5 @@ next-env.d.ts
 # logs
 logs
 *.log
-
-# cursor editor
-.cursor/
-
 # local files
 .local/

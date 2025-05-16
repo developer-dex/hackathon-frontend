@@ -1,0 +1,524 @@
+---
+description: 
+globs: src/application/**/*.tsx,src/application/**/*.ts
+alwaysApply: false
+---
+# Application Layer (Service/Use Case Layer)
+
+## Overview
+The Application Layer orchestrates interactions between the UI and data layers, contains application-specific business logic, and handles user actions. It serves as the bridge between what the user sees/interacts with and how the application processes/stores data.
+
+## Directory Structure
+```
+src/
+└── application/
+    ├── useCases/     // Core application use cases (one file per use case)
+    ├── services/     // Services that orchestrate multiple use cases
+    ├── contexts/     // React context providers for state management
+    └── hooks/        // Custom hooks that leverage use cases
+```
+
+## Strict Rules and Guidelines
+
+### 1. Use Case Design
+
+- **Single Responsibility**
+  - Each use case MUST represent a single action or operation
+  - Use cases MUST be named after the action they perform (e.g., `createTaskUseCase`, `authenticateUserUseCase`)
+  - Each use case MUST be in its own file
+
+- **Pure Function Principles**
+  - Use cases MUST be pure functions that don't rely on global state
+  - Use cases MUST be deterministic (same input = same output)
+  - Use cases MUST NOT have side effects beyond their explicit purpose
+  - Use cases MUST NOT directly manipulate UI or DOM
+
+- **Dependency Injection**
+  - Use cases MUST receive all required dependencies as parameters
+  - Dependencies MUST be interfaces defined in the Domain Layer
+  - No direct instantiation of implementation classes within use cases
+
+- **Error Handling**
+  - Use cases MUST return data or throw typed exceptions
+  - Exceptions MUST be domain-specific and meaningful
+  - Success and error paths MUST be clearly defined
+  - Never use generic errors, always use business domain errors
+
+- **Type Safety**
+  - All inputs and outputs MUST be strongly typed
+  - DTOs (Data Transfer Objects) SHOULD be used for data exchange
+  - Type validation SHOULD happen at the boundaries
+
+### 2. Context Design
+
+- **Domain Separation**
+  - Create separate contexts for different domains (e.g., TaskContext, UserContext)
+  - Contexts MUST NOT mix concerns from multiple domains
+  - Each context MUST be in its own file or directory
+
+- **State Management**
+  - Context providers MUST encapsulate use case calls
+  - Context MUST expose:
+    - State: The current application state for that domain
+    - Actions: Functions that modify the state by calling use cases
+    - Status: Loading, error, and success states
+  - Contexts SHOULD use React's useReducer for complex state
+
+- **Error Handling**
+  - Contexts MUST handle errors from use cases
+  - Contexts MUST provide error state to components
+  - Contexts SHOULD offer error recovery mechanisms
+  - All async operations MUST handle both success and error paths
+
+- **Initialization**
+  - Contexts MUST have sensible initial states
+  - Contexts SHOULD handle loading initial data if needed
+  - Context initialization SHOULD be lazy when possible
+
+### 3. Hook Design
+
+- **Custom Hook Rules**
+  - Create custom hooks to abstract complex logic from components
+  - Hooks MUST follow the 'use' naming convention (e.g., `useTasks`, `useAuthentication`)
+  - Hooks SHOULD encapsulate one feature or aspect of the application
+  - Hooks MUST NOT include UI rendering logic
+
+- **Composition Pattern**
+  - Complex hooks SHOULD be composed of simpler hooks
+  - Hooks SHOULD be specific and focused
+  - Avoid "kitchen sink" hooks that do too many things
+
+- **Data Flow**
+  - Hooks MUST call use cases/services/contexts
+  - Hooks MUST NOT directly call repositories or API endpoints
+  - Hooks SHOULD transform data to formats needed by components
+  - Hooks SHOULD handle loading, error, and success states
+
+- **Cleanup**
+  - Hooks MUST clean up resources (subscriptions, timers, etc.)
+  - Hooks MUST cancel pending operations when unmounted
+  - Hooks SHOULD handle component lifecycle changes appropriately
+
+### 4. Service Design
+
+- **Orchestration**
+  - Services SHOULD coordinate multiple use cases
+  - Services SHOULD handle cross-cutting concerns
+  - Services SHOULD NOT contain business rules (those belong in the domain)
+  - Services SHOULD be stateless when possible
+
+- **Dependency Management**
+  - Services MUST use dependency injection
+  - Services MUST depend on abstractions, not implementations
+  - Services SHOULD be easily testable
+  - Services SHOULD use a consistent error handling strategy
+
+## Implementation Examples
+
+### Use Case Example
+
+```tsx
+// createTaskUseCase.ts
+import { Task } from '@/domain/entities/Task';
+import { TaskRepository } from '@/domain/interfaces/TaskRepository';
+import { TaskValidator } from '@/domain/validators/TaskValidator';
+import { InvalidTaskError } from '@/domain/errors/TaskErrors';
+
+/**
+ * Creates a new task with the provided details
+ * 
+ * @throws {InvalidTaskError} When task data is invalid
+ * @throws {TaskRepositoryError} When task creation fails at the repository level
+ */
+export const createTaskUseCase = async (
+  taskRepository: TaskRepository,
+  title: string,
+  priority: string,
+  dueDate?: string
+): Promise<Task> => {
+  // Validate input data
+  const validationErrors = TaskValidator.validateTaskCreation({ title, priority, dueDate });
+  if (validationErrors.length > 0) {
+    throw new InvalidTaskError(`Task validation failed: ${validationErrors.join(', ')}`);
+  }
+  
+  // Prepare task data
+  const newTask: Omit<Task, 'id'> = {
+    title,
+    priority: priority as 'high' | 'medium' | 'low',
+    completed: false,
+    createdAt: new Date().toISOString(),
+    dueDate: dueDate || null
+  };
+  
+  // Persist to repository
+  return await taskRepository.createTask(newTask);
+};
+```
+
+### Context Example
+
+```tsx
+// TaskContext.tsx
+import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import { Task } from '@/domain/entities/Task';
+import { createTaskUseCase } from '../useCases/createTaskUseCase';
+import { deleteTaskUseCase } from '../useCases/deleteTaskUseCase';
+import { completeTaskUseCase } from '../useCases/completeTaskUseCase';
+import { getAllTasksUseCase } from '../useCases/getAllTasksUseCase';
+import { taskRepository } from '@/infrastructure/repositories/TaskRepository';
+import { DomainError } from '@/domain/errors/DomainError';
+
+// State type
+interface TaskState {
+  tasks: Task[];
+  isLoading: boolean;
+  error: Error | null;
+}
+
+// Action types
+type TaskAction = 
+  | { type: 'FETCH_TASKS_REQUEST' }
+  | { type: 'FETCH_TASKS_SUCCESS', payload: Task[] }
+  | { type: 'FETCH_TASKS_FAILURE', payload: Error }
+  | { type: 'CREATE_TASK_REQUEST' }
+  | { type: 'CREATE_TASK_SUCCESS', payload: Task }
+  | { type: 'CREATE_TASK_FAILURE', payload: Error }
+  | { type: 'DELETE_TASK_SUCCESS', payload: string }
+  | { type: 'COMPLETE_TASK_SUCCESS', payload: Task };
+
+// Context type
+interface TaskContextType extends TaskState {
+  fetchTasks: () => Promise<void>;
+  createTask: (title: string, priority: string) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  completeTask: (id: string) => Promise<void>;
+}
+
+// Reducer function
+const taskReducer = (state: TaskState, action: TaskAction): TaskState => {
+  switch (action.type) {
+    case 'FETCH_TASKS_REQUEST':
+      return { ...state, isLoading: true, error: null };
+    case 'FETCH_TASKS_SUCCESS':
+      return { ...state, isLoading: false, tasks: action.payload };
+    case 'FETCH_TASKS_FAILURE':
+      return { ...state, isLoading: false, error: action.payload };
+    case 'CREATE_TASK_REQUEST':
+      return { ...state, isLoading: true, error: null };
+    case 'CREATE_TASK_SUCCESS':
+      return { 
+        ...state, 
+        isLoading: false, 
+        tasks: [...state.tasks, action.payload] 
+      };
+    case 'CREATE_TASK_FAILURE':
+      return { ...state, isLoading: false, error: action.payload };
+    case 'DELETE_TASK_SUCCESS':
+      return { 
+        ...state, 
+        tasks: state.tasks.filter(task => task.id !== action.payload) 
+      };
+    case 'COMPLETE_TASK_SUCCESS':
+      return { 
+        ...state, 
+        tasks: state.tasks.map(task => 
+          task.id === action.payload.id ? action.payload : task
+        ) 
+      };
+    default:
+      return state;
+  }
+};
+
+// Create context
+const TaskContext = createContext<TaskContextType | undefined>(undefined);
+
+// Initial state
+const initialState: TaskState = {
+  tasks: [],
+  isLoading: false,
+  error: null
+};
+
+// Provider component
+export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [state, dispatch] = useReducer(taskReducer, initialState);
+  
+  // Actions
+  const fetchTasks = async () => {
+    dispatch({ type: 'FETCH_TASKS_REQUEST' });
+    try {
+      const tasks = await getAllTasksUseCase(taskRepository);
+      dispatch({ type: 'FETCH_TASKS_SUCCESS', payload: tasks });
+    } catch (error) {
+      dispatch({ 
+        type: 'FETCH_TASKS_FAILURE', 
+        payload: error instanceof Error ? error : new Error('Failed to fetch tasks') 
+      });
+    }
+  };
+  
+  const createTask = async (title: string, priority: string) => {
+    dispatch({ type: 'CREATE_TASK_REQUEST' });
+    try {
+      const newTask = await createTaskUseCase(taskRepository, title, priority);
+      dispatch({ type: 'CREATE_TASK_SUCCESS', payload: newTask });
+    } catch (error) {
+      dispatch({ 
+        type: 'CREATE_TASK_FAILURE', 
+        payload: error instanceof Error ? error : new Error('Failed to create task') 
+      });
+    }
+  };
+  
+  const deleteTask = async (id: string) => {
+    try {
+      await deleteTaskUseCase(taskRepository, id);
+      dispatch({ type: 'DELETE_TASK_SUCCESS', payload: id });
+    } catch (error) {
+      dispatch({ 
+        type: 'FETCH_TASKS_FAILURE', 
+        payload: error instanceof Error ? error : new Error(`Failed to delete task ${id}`) 
+      });
+    }
+  };
+  
+  const completeTask = async (id: string) => {
+    try {
+      const updatedTask = await completeTaskUseCase(taskRepository, id);
+      dispatch({ type: 'COMPLETE_TASK_SUCCESS', payload: updatedTask });
+    } catch (error) {
+      dispatch({ 
+        type: 'FETCH_TASKS_FAILURE', 
+        payload: error instanceof Error ? error : new Error(`Failed to complete task ${id}`) 
+      });
+    }
+  };
+  
+  // Context value
+  const value = {
+    ...state,
+    fetchTasks,
+    createTask,
+    deleteTask,
+    completeTask
+  };
+  
+  return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
+};
+
+// Hook for consuming context
+export const useTasks = (): TaskContextType => {
+  const context = useContext(TaskContext);
+  if (context === undefined) {
+    throw new Error('useTasks must be used within a TaskProvider');
+  }
+  return context;
+};
+```
+
+### Custom Hook Example
+
+```tsx
+// useTasks.ts (alternative implementation using custom hook)
+import { useState, useEffect, useCallback } from 'react';
+import { Task } from '@/domain/entities/Task';
+import { createTaskUseCase } from '../useCases/createTaskUseCase';
+import { deleteTaskUseCase } from '../useCases/deleteTaskUseCase';
+import { completeTaskUseCase } from '../useCases/completeTaskUseCase';
+import { getAllTasksUseCase } from '../useCases/getAllTasksUseCase';
+import { taskRepository } from '@/infrastructure/repositories/TaskRepository';
+
+export const useTasks = () => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const fetchTasks = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const fetchedTasks = await getAllTasksUseCase(taskRepository);
+      setTasks(fetchedTasks);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch tasks'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  const createTask = useCallback(async (title: string, priority: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const newTask = await createTaskUseCase(taskRepository, title, priority);
+      setTasks(prevTasks => [...prevTasks, newTask]);
+      return newTask;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to create task'));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+  
+  const deleteTask = useCallback(async (id: string) => {
+    try {
+      await deleteTaskUseCase(taskRepository, id);
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(`Failed to delete task ${id}`));
+      throw err;
+    }
+  }, []);
+  
+  const completeTask = useCallback(async (id: string) => {
+    try {
+      const updatedTask = await completeTaskUseCase(taskRepository, id);
+      setTasks(prevTasks => 
+        prevTasks.map(task => task.id === id ? updatedTask : task)
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(`Failed to complete task ${id}`));
+      throw err;
+    }
+  }, []);
+  
+  // Load tasks on initial mount
+  useEffect(() => {
+    fetchTasks();
+    
+    // Clean up any pending operations if needed
+    return () => {
+      // Cancel any pending requests if necessary
+    };
+  }, [fetchTasks]);
+  
+  return {
+    tasks,
+    isLoading,
+    error,
+    fetchTasks,
+    createTask,
+    deleteTask,
+    completeTask
+  };
+};
+```
+
+## Anti-Patterns to Avoid
+
+1. ❌ **Direct Repository Access in Hooks**
+   ```tsx
+   // WRONG
+   const useTasksWrong = () => {
+     const [tasks, setTasks] = useState([]);
+     
+     useEffect(() => {
+       // Direct repository usage bypasses use cases
+       taskRepository.getAllTasks().then(setTasks);
+     }, []);
+     
+     // ...
+   };
+   ```
+
+2. ❌ **UI Logic in Use Cases**
+   ```tsx
+   // WRONG
+   const createTaskWithUIUseCase = async (
+     taskRepository: TaskRepository,
+     title: string,
+     setLoading: (loading: boolean) => void
+   ) => {
+     setLoading(true); // UI concern in use case
+     // ...
+     setLoading(false);
+   };
+   ```
+
+3. ❌ **Global State in Use Cases**
+   ```tsx
+   // WRONG
+   const globalTaskList = []; // Global state
+   
+   const createTaskWithGlobalUseCase = async (
+     taskRepository: TaskRepository,
+     title: string
+   ) => {
+     const task = await taskRepository.createTask({ title });
+     globalTaskList.push(task); // Mutation of global state
+     return task;
+   };
+   ```
+
+## Correct Patterns
+
+1. ✅ **Proper Use Case Structure**
+   ```tsx
+   // CORRECT
+   export const createTaskUseCase = async (
+     taskRepository: TaskRepository,
+     title: string,
+     priority: string
+   ): Promise<Task> => {
+     if (!title.trim()) {
+       throw new InvalidTaskError('Task title cannot be empty');
+     }
+     
+     return taskRepository.createTask({
+       title,
+       priority,
+       completed: false,
+       createdAt: new Date().toISOString()
+     });
+   };
+   ```
+
+2. ✅ **Proper Hook Structure**
+   ```tsx
+   // CORRECT
+   export const useTaskCreation = () => {
+     const [isLoading, setIsLoading] = useState(false);
+     const [error, setError] = useState<Error | null>(null);
+     
+     const createTask = async (title: string, priority: string) => {
+       setIsLoading(true);
+       setError(null);
+       try {
+         return await createTaskUseCase(taskRepository, title, priority);
+       } catch (err) {
+         setError(err instanceof Error ? err : new Error('Failed to create task'));
+         throw err;
+       } finally {
+         setIsLoading(false);
+       }
+     };
+     
+     return { createTask, isLoading, error };
+   };
+   ```
+
+3. ✅ **Proper Context Consumer**
+   ```tsx
+   // CORRECT
+   const TaskList = () => {
+     const { tasks, isLoading, error, fetchTasks } = useTasks();
+     
+     useEffect(() => {
+       fetchTasks();
+     }, [fetchTasks]);
+     
+     if (isLoading) return <Loading />;
+     if (error) return <ErrorDisplay message={error.message} />;
+     
+     return (
+       <ul>
+         {tasks.map(task => (
+           <TaskItem key={task.id} task={task} />
+         ))}
+       </ul>
+     );
+   };
+   ```

@@ -1,0 +1,386 @@
+---
+description: 
+globs: src/**/**/**/*
+alwaysApply: false
+---
+# Layered Architecture for Frontend
+
+## Overview
+This rule defines the layered architecture for frontend development, separating concerns into distinct layers: Presentation, Application, Domain, and Infrastructure.
+
+## Layer Responsibilities
+
+### 1. Presentation Layer (UI Layer)
+The Presentation Layer is responsible for displaying data and capturing user input. It contains all UI components, pages, and layouts.
+
+```
+src/
+├── components/      // Reusable UI components using atomic design
+│   ├── atoms/
+│   ├── molecules/
+│   ├── organisms/
+│   └── templates/
+├── pages/           // Next.js page router
+└── styles/          // Global styles and themes
+```
+
+#### Presentation Layer Rules
+
+1. **Component Design**
+   - Components must be functional components using React hooks
+   - Components should not contain business logic
+   - Components should receive data and callback functions as props
+   - Components should not directly access API or data fetching functionality
+   - Use TypeScript interfaces to define prop types
+
+2. **State Management**
+   - Components should use local state (useState) only for UI-specific state
+   - Business data should come from context providers or props
+   - Components should dispatch actions through provided callbacks, not directly
+
+3. **Example Implementation**
+
+```tsx
+// TaskItem.tsx
+import React from 'react';
+import { Task } from '@/domain/entities/Task';
+
+interface TaskItemProps {
+  task: Task;
+  onComplete: (id: string) => void;
+  onDelete: (id: string) => void;
+}
+
+export const TaskItem: React.FC<TaskItemProps> = ({ 
+  task, 
+  onComplete, 
+  onDelete 
+}) => {
+  return (
+    <div className="task-item">
+      <input
+        type="checkbox"
+        checked={task.completed}
+        onChange={() => onComplete(task.id)}
+      />
+      <span>{task.title}</span>
+      <button onClick={() => onDelete(task.id)}>Delete</button>
+    </div>
+  );
+};
+```
+
+### 2. Application Layer (Service/Use Case Layer)
+The Application Layer orchestrates interactions between the UI and data layers, contains application-specific business logic, and handles user actions.
+
+```
+src/
+└── application/
+    ├── useCases/     // Core application use cases
+    ├── services/     // Services that orchestrate multiple use cases
+    ├── contexts/     // React context providers for state management
+    └── hooks/        // Custom hooks that leverage use cases
+```
+
+#### Application Layer Rules
+
+1. **Use Case Design**
+   - Each use case should represent a single action/operation
+   - Use cases should be pure functions that don't rely on global state
+   - Use cases should receive required dependencies as parameters
+   - Use cases should return data or throw typed exceptions
+   - Use cases should not contain UI-specific logic
+
+2. **Context Design**
+   - Create separate contexts for different domains
+   - Context providers should encapsulate use case calls
+   - Context should expose state and actions
+   - Contexts should handle loading, error, and success states
+
+3. **Hook Design**
+   - Create custom hooks for common state and behavior patterns
+   - Hooks should abstract complex state management logic from components
+   - Hooks should call use cases/services/contexts, not directly call repositories
+   - Use naming convention: `use[Feature]` (e.g., `useTasks`, `useAuthentication`)
+
+4. **Example Implementation**
+
+```tsx
+// createTaskUseCase.ts
+import { Task } from '@/domain/entities/Task';
+import { TaskRepository } from '@/domain/interfaces/TaskRepository';
+import { InvalidTaskError } from '@/domain/errors/TaskErrors';
+
+export const createTaskUseCase = async (
+  taskRepository: TaskRepository,
+  title: string,
+  priority: string
+): Promise<Task> => {
+  if (!title.trim()) {
+    throw new InvalidTaskError('Task title cannot be empty');
+  }
+  
+  const newTask: Omit<Task, 'id'> = {
+    title,
+    priority,
+    completed: false,
+    createdAt: new Date().toISOString()
+  };
+  
+  return taskRepository.createTask(newTask);
+};
+
+// TaskContext.tsx
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { Task } from '@/domain/entities/Task';
+import { createTaskUseCase } from '../useCases/createTaskUseCase';
+import { taskRepository } from '@/infrastructure/repositories/TaskRepository';
+
+interface TaskContextType {
+  tasks: Task[];
+  loading: boolean;
+  error: Error | null;
+  createTask: (title: string, priority: string) => Promise<void>;
+}
+
+const TaskContext = createContext<TaskContextType | undefined>(undefined);
+
+export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  
+  const createTask = async (title: string, priority: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const newTask = await createTaskUseCase(taskRepository, title, priority);
+      setTasks(prevTasks => [...prevTasks, newTask]);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Unknown error'));
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const value = {
+    tasks,
+    loading,
+    error,
+    createTask
+  };
+  
+  return <TaskContext.Provider value={value}>{children}</TaskContext.Provider>;
+};
+
+export const useTasks = () => {
+  const context = useContext(TaskContext);
+  if (context === undefined) {
+    throw new Error('useTasks must be used within a TaskProvider');
+  }
+  return context;
+};
+```
+
+### 3. Domain Layer (Business Logic Layer)
+The Domain Layer contains the core business logic, entities, value objects, and rules that are independent of UI and data fetching mechanisms.
+
+```
+src/
+└── domain/
+    ├── entities/      // Core business entities (e.g., Task, User)
+    ├── valueObjects/  // Immutable objects with equality based on attributes
+    ├── errors/        // Domain-specific error types
+    ├── interfaces/    // Repository interfaces and other abstractions
+    └── validators/    // Business rule validators
+```
+
+#### Domain Layer Rules
+
+1. **Entity Design**
+   - Entities should be pure TypeScript objects or classes
+   - Entities should have a unique identifier
+   - Entities should encapsulate their validation logic
+   - Entities should not contain UI or infrastructure-specific code
+   - Entities should be immutable where possible
+
+2. **Interface Design**
+   - Define repository interfaces in the domain layer
+   - Define service interfaces that domain layer depends on
+   - Infrastructure implementations should adhere to these interfaces
+   - Use dependency inversion to keep domain layer independent
+
+3. **Error Handling**
+   - Create custom error classes for domain-specific errors
+   - All errors should extend a base DomainError class
+   - Error messages should be clear and business-oriented
+   - Include contextual information in errors where helpful
+
+4. **Example Implementation**
+
+```tsx
+// Task.ts
+export interface Task {
+  id: string;
+  title: string;
+  completed: boolean;
+  priority: 'high' | 'medium' | 'low';
+  createdAt: string;
+}
+
+// TaskRepository.ts
+export interface TaskRepository {
+  getAllTasks(): Promise<Task[]>;
+  getTaskById(id: string): Promise<Task | null>;
+  createTask(task: Omit<Task, 'id'>): Promise<Task>;
+  updateTask(id: string, updates: Partial<Omit<Task, 'id'>>): Promise<Task>;
+  deleteTask(id: string): Promise<void>;
+}
+
+// TaskErrors.ts
+export class DomainError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = this.constructor.name;
+  }
+}
+
+export class InvalidTaskError extends DomainError {
+  constructor(message: string) {
+    super(message);
+  }
+}
+```
+
+### 4. Infrastructure Layer (Data Layer)
+The Infrastructure Layer is responsible for external communications and data persistence.
+
+```
+src/
+└── infrastructure/
+    ├── api/           // API client and configuration
+    ├── repositories/  // Concrete implementations of repository interfaces
+    ├── http/          // HTTP utilities (axios/fetch configurations)
+    ├── storage/       // Local storage adapters
+    └── adapters/      // Adapters for third-party services
+```
+
+#### Infrastructure Layer Rules
+
+1. **Repository Implementation**
+   - Each repository should implement an interface defined in the Domain Layer
+   - Repositories should handle data transformation between API and domain formats
+   - Repositories should abstract away the details of HTTP requests
+   - Repositories should be testable with mock HTTP clients
+
+2. **API Client Design**
+   - Create a centralized API client to handle common concerns
+   - API endpoints should be organized by domain
+   - API response types should be defined separately from domain entities
+
+3. **Data Transformation**
+   - Create mappers to transform between API models and domain models
+   - Handle different field names or formats between API and domain
+   - Ensure type safety during transformations
+
+4. **Example Implementation**
+
+```tsx
+// ApiClient.ts
+import axios, { AxiosInstance } from 'axios';
+
+export const createApiClient = (baseURL: string): AxiosInstance => {
+  const client = axios.create({
+    baseURL,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  client.interceptors.response.use(
+    response => response,
+    error => {
+      // Transform to domain errors
+      return Promise.reject(error);
+    }
+  );
+  
+  return client;
+};
+
+// TaskApiTypes.ts
+export interface TaskApiResponse {
+  id: string;
+  title: string;
+  is_completed: boolean; // Note different naming from domain model
+  priority_level: string;
+  created_at: string;
+}
+
+// TaskMapper.ts
+import { Task } from '@/domain/entities/Task';
+import { TaskApiResponse } from './TaskApiTypes';
+
+export const mapApiTaskToDomain = (apiTask: TaskApiResponse): Task => {
+  return {
+    id: apiTask.id,
+    title: apiTask.title,
+    completed: apiTask.is_completed,
+    priority: apiTask.priority_level as 'high' | 'medium' | 'low',
+    createdAt: apiTask.created_at
+  };
+};
+
+// TaskRepository.ts
+import { Task, TaskRepository } from '@/domain/interfaces/TaskRepository';
+import { AxiosInstance } from 'axios';
+import { mapApiTaskToDomain } from '../mappers/taskMapper';
+import { TaskApiResponse } from '../api/TaskApiTypes';
+
+export class ApiTaskRepository implements TaskRepository {
+  private apiClient: AxiosInstance;
+  
+  constructor(apiClient: AxiosInstance) {
+    this.apiClient = apiClient;
+  }
+  
+  async getAllTasks(): Promise<Task[]> {
+    try {
+      const response = await this.apiClient.get<TaskApiResponse[]>('/tasks');
+      return response.data.map(mapApiTaskToDomain);
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  // Other methods...
+}
+```
+
+## Layer Interaction Rules
+
+1. **Dependencies Flow**
+   - Presentation Layer → Application Layer → Domain Layer ← Infrastructure Layer
+   - Domain Layer should not depend on any other layer
+   - Infrastructure Layer should depend only on Domain Layer interfaces
+   - Application Layer can depend on Domain Layer but not on Infrastructure Layer directly
+   - Presentation Layer should primarily use Application Layer and not bypass it
+
+2. **Communication Rules**
+   - Presentation Layer components call Application Layer hooks/contexts
+   - Application Layer uses cases call Domain Layer entities and Infrastructure Layer repositories
+   - Infrastructure Layer implements Domain Layer interfaces
+   - No layer should bypass intermediate layers
+
+3. **Data Flow Visualization**
+```
+UI Components → Hooks/Contexts → Use Cases → Entities/Repositories ← API Client
+```
+
+## Best Practices
+
+1. Use dependency injection to keep layers decoupled
+2. Use TypeScript interfaces to define contracts between layers
+3. Implement proper error handling at each layer
+4. Keep layers focused on their specific responsibilities
+5. Don't mix concerns across layers

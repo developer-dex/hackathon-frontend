@@ -1,0 +1,106 @@
+---
+description: When any next js project intialisation is made then follow this rules
+globs: 
+alwaysApply: false
+---
+# Next.js Project Initialization with Pages Router
+
+## Tech Stack Requirements
+
+- Next.js with Pages Router
+- TypeScript (strict mode)
+- Tailwind CSS
+- Jest & React Testing Library for testing
+- Lightweight UI components (prefer shadcn/ui or Headless UI)
+
+## Project Setup
+
+### Next.js + TypeScript + Tailwind CSS
+
+```bash
+npx create-next-app@latest --typescript --tailwind --eslint --use-npm --src-dir --import-alias "@/*" my-project-name
+```
+
+### Testing Setup
+
+```bash
+npm install --save-dev jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom
+```
+
+### Jest Configuration
+
+Create `jest.config.js` in the root directory:
+
+```javascript
+const nextJest = require('next/jest')
+
+const createJestConfig = nextJest({
+  // Provide the path to your Next.js app to load next.config.js and .env files in your test environment
+  dir: './',
+})
+
+// Add any custom config to be passed to Jest
+const customJestConfig = {
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
+  testEnvironment: 'jest-environment-jsdom',
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  }
+}
+
+// createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
+module.exports = createJestConfig(customJestConfig)
+```
+
+Create `jest.setup.js`:
+
+```javascript
+import '@testing-library/jest-dom'
+```
+
+### Package.json Scripts
+
+Add to package.json:
+
+```json
+"scripts": {
+  "test": "jest",
+  "test:watch": "jest --watch",
+  "test:coverage": "jest --coverage"
+}
+```
+
+## UI Component Libraries
+
+Choose one of these lightweight libraries:
+
+- [shadcn/ui](mdc:https:/ui.shadcn.com) - Copy and paste UI components built on Radix UI
+- [Headless UI](mdc:https:/headlessui.dev) - Completely unstyled, accessible UI components
+- [Radix UI](mdc:https:/www.radix-ui.com) - Low-level UI component primitives
+
+## Project Structure
+
+Follow the atomic design pattern and layered architecture as defined in the folder structure SOP.
+
+```
+src/
+├── pages/                      # Next.js page router
+├── components/                 # UI components using Atomic Design
+│   ├── atoms/
+│   ├── molecules/
+│   ├── organisms/
+│   └── templates/
+├── application/                # Application layer
+├── domain/                     # Domain layer
+├── infrastructure/             # Infrastructure layer
+└── styles/                     # Global styles
+```
+
+## Next Steps
+
+After initialization:
+1. Configure eslint and prettier
+2. Set up husky for pre-commit hooks
+3. Configure CI/CD
+4. Create base components following atomic design
+5. Implement layered architecture patterns
