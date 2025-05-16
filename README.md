@@ -1,28 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Todo Application
+
+A modern Todo application built with Next.js, TypeScript, and Tailwind CSS following clean architecture principles and atomic design.
+
+## Features
+
+- Create, read, update, and delete tasks
+- Mark tasks as complete/incomplete
+- Prioritize tasks with high, medium, or low priority
+- Set due dates for tasks
+- Filter and sort tasks
+- Responsive design
+
+## Architecture
+
+The application is built with a layered architecture:
+
+### Domain Layer
+
+- Contains business logic, entities, and interfaces
+- Independent of any framework or external concerns
+
+### Application Layer
+
+- Use cases that orchestrate the flow of data between UI and domain
+- Contexts for state management
+- Custom hooks leveraging use cases
+
+### Infrastructure Layer
+
+- API implementations
+- Repository implementations
+
+### Presentation Layer (UI)
+
+- Follows atomic design principles
+- Atoms: Basic UI components (Button, Badge)
+- Molecules: Composed components (TaskItem)
+- Organisms: Complex components (TaskList, TaskForm)
+- Templates: Page layouts (TasksTemplate)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 14.x or later
+- npm 7.x or later
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/yourusername/todo-app.git
+cd todo-app
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## Testing
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+Run the test suite with:
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+```bash
+npm run test
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Built With
+
+- [Next.js](https://nextjs.org/) - React framework
+- [TypeScript](https://www.typescriptlang.org/) - Type-safe JavaScript
+- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework
+- [Jest](https://jestjs.io/) - Testing framework
+
+## Project Structure
+
+```
+src/
+├── pages/                      # Next.js page router
+├── components/                 # UI components using Atomic Design
+│   ├── atoms/                  # Basic UI elements
+│   ├── molecules/              # Composite components
+│   ├── organisms/              # Complex UI sections
+│   └── templates/              # Page layouts
+├── application/                # Application layer
+│   ├── useCases/               # Business logic use cases
+│   ├── services/               # Services orchestrating use cases
+│   ├── contexts/               # React contexts for state
+│   └── hooks/                  # Custom hooks
+├── domain/                     # Domain layer
+│   ├── entities/               # Business entities
+│   ├── interfaces/             # Repository interfaces
+│   ├── errors/                 # Domain-specific errors
+│   └── validators/             # Validation logic
+└── infrastructure/             # Infrastructure layer
+    ├── repositories/           # Repository implementations
+    └── api/                    # API service implementations
+```
 
 ## Learn More
 
