@@ -48,14 +48,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     []
   );
 
-  useEffect(() => {
-    const authStatus = authUseCase.checkAuth.execute();
-    setIsAuthenticated(authStatus);
-  }, [user]);
-
-  // Debounced fetch function
-  const debouncedFetchData = useCallback(
-    debounce(async (period: TimePeriod) => {
+  // Memoize the fetch function
+  const fetchData = useCallback(
+    async (period: TimePeriod) => {
       setIsLoading(true);
       try {
         const data = await analyticsUseCase.execute(period);
@@ -77,9 +72,20 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
       } finally {
         setIsLoading(false);
       }
-    }, 300),
-    [analyticsUseCase, onLogout, router, setIsLoading, setAnalyticsData]
+    },
+    [analyticsUseCase, onLogout, router]
   );
+
+  // Memoize the debounced function
+  const debouncedFetchData = useMemo(
+    () => debounce(fetchData, 300),
+    [fetchData]
+  );
+
+  useEffect(() => {
+    const authStatus = authUseCase.checkAuth.execute();
+    setIsAuthenticated(authStatus);
+  }, [user]);
 
   useEffect(() => {
     if (isAuthenticated) {

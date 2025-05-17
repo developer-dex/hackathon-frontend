@@ -9,19 +9,13 @@ import {
   Menu,
   MenuItem,
   Avatar,
-  Drawer,
-  List,
-  ListItem,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import MenuIcon from "@mui/icons-material/Menu";
 import Link from "next/link";
 import Image from "next/image";
 import { IUser, EUserRole } from "@/domain/models/auth";
 import { useRouter } from "next/router";
-import { AddIcon } from "@/components/icons/AddIcon";
-import styles from "@/styles/Header.module.css";
 
 interface IHeaderProps {
   user: IUser | null;
