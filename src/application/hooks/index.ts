@@ -30,4 +30,12 @@
  * };
  */
 
+/**
+ * This file re-exports all custom hooks for cleaner imports
+ */
+
+// Team hooks
 export * from "./useTeams";
+
+// Kudos hooks
+export * from "./useKudos";

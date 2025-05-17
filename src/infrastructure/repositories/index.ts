@@ -19,6 +19,13 @@ export * from "./implementations/AuthRepositoryImpl";
 // Export TeamRepositoryImpl
 export * from "./implementations/TeamRepositoryImpl";
 
+// Export KudosRepositoryImpl
+export * from "./implementations/KudosRepositoryImpl";
+
+// Initialize and export kudos repository singleton
+import { KudosRepositoryImpl } from "./implementations/KudosRepositoryImpl";
+export const kudosRepository = new KudosRepositoryImpl();
+
 /**
  * Repository implementations go here.
  *

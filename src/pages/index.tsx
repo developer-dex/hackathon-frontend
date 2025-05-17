@@ -1,12 +1,19 @@
 import React from "react";
 import { NextPage } from "next";
 import Head from "next/head";
-import { Box, Typography, Button, Paper, Grid } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Grid,
+  CircularProgress,
+} from "@mui/material";
 import { IUser } from "@/domain/models/auth";
 import MainLayout from "@/components/templates/MainLayout";
 import Link from "next/link";
 import { KudosWall } from "../components/organisms/KudosWall";
-import { CKudosMockData } from "../domain/mock/kudosData";
+import { useKudos } from "@/application/hooks/useKudos";
 
 interface HomePageProps {
   user: IUser | null;
@@ -38,6 +45,8 @@ interface AuthenticatedContentProps {
 const AuthenticatedContent: React.FC<AuthenticatedContentProps> = ({
   user,
 }) => {
+  const { kudosList, isLoading, error } = useKudos();
+
   return (
     <Box>
       <Typography variant="h4" component="h1" gutterBottom>
@@ -46,7 +55,19 @@ const AuthenticatedContent: React.FC<AuthenticatedContentProps> = ({
 
       {/* Kudos Wall displayed directly on the homepage */}
       <Box sx={{ mt: 4 }}>
-        <KudosWall kudosList={CKudosMockData} title="Recognition Wall" />
+        {isLoading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Box
+            sx={{ p: 2, bgcolor: "#FFF4F4", borderRadius: 1, color: "#D32F2F" }}
+          >
+            <Typography>{error}</Typography>
+          </Box>
+        ) : (
+          <KudosWall kudosList={kudosList} title="Recognition Wall" />
+        )}
       </Box>
     </Box>
   );
