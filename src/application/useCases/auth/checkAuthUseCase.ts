@@ -6,7 +6,12 @@ export class CheckAuthUseCase {
    */
   execute(): boolean {
     if (typeof window !== "undefined") {
-      return !!localStorage.getItem("authToken");
+      try {
+        return !!localStorage.getItem("authToken");
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        return false;
+      }
     }
     return false;
   }
@@ -18,9 +23,14 @@ export class CheckAuthUseCase {
   validateTokenFormat(token: string): boolean {
     if (!token) return false;
 
-    // Basic JWT format validation (header.payload.signature)
-    const tokenParts = token.split(".");
-    return tokenParts.length === 3;
+    try {
+      // Basic JWT format validation (header.payload.signature)
+      const tokenParts = token.split(".");
+      return tokenParts.length === 3;
+    } catch (error) {
+      console.error("Error validating token format:", error);
+      return false;
+    }
   }
 
   /**
@@ -29,14 +39,19 @@ export class CheckAuthUseCase {
    */
   getCurrentUser(): IUser | null {
     if (typeof window !== "undefined") {
-      const userString = localStorage.getItem("user");
-      if (userString) {
-        try {
-          return JSON.parse(userString);
-        } catch (error) {
-          console.error("Error parsing user data:", error);
-          return null;
+      try {
+        const userString = localStorage.getItem("user");
+        if (userString) {
+          try {
+            return JSON.parse(userString);
+          } catch (parseError) {
+            console.error("Error parsing user data:", parseError);
+            return null;
+          }
         }
+      } catch (storageError) {
+        console.error("Error accessing localStorage:", storageError);
+        return null;
       }
     }
     return null;
@@ -47,7 +62,12 @@ export class CheckAuthUseCase {
    * @param requiredRole The role to check for
    */
   hasRole(requiredRole: string): boolean {
-    const user = this.getCurrentUser();
-    return !!user && user.role === requiredRole;
+    try {
+      const user = this.getCurrentUser();
+      return !!user && user.role === requiredRole;
+    } catch (error) {
+      console.error("Error checking user role:", error);
+      return false;
+    }
   }
 }

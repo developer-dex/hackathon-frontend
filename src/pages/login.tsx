@@ -6,6 +6,7 @@ import AuthLayout from "@/components/templates/AuthLayout";
 import LoginForm from "@/components/organisms/LoginForm";
 import { IAuthCredentials, IUser } from "@/domain/models/auth";
 import { authUseCase } from "@/application/useCases";
+import { toastSuccess, toastError } from "@/application/utils/toast";
 
 interface ILoginPageProps {
   setUser: (user: IUser) => void;
@@ -22,11 +23,44 @@ const LoginPage: NextPage<ILoginPageProps> = ({ setUser }) => {
 
     try {
       const response = await authUseCase.login.execute(credentials);
-      setUser(response.user);
-      router.push("/"); // Redirect to home page after successful login
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("Invalid email or password. Please try again.");
+
+      // Check if response and user are valid
+      if (response && response.user) {
+        setUser(response.user);
+
+        // Show success toast notification
+        toastSuccess(
+          `Welcome, ${response.user.name || "User"}! Login successful.`
+        );
+      } else {
+        // Handle case where response exists but doesn't contain expected data
+        console.error("Login response missing user data");
+        toastError("Login failed. Please try again later.");
+
+        // Set a generic error message
+        setError("Unable to complete login. Please try again.");
+      }
+
+      // Always redirect to home page after attempt, successful or not
+      router.push("/");
+    } catch (error) {
+      // Log the error but don't throw it
+      console.error("Login error:", error);
+
+      // Show error toast notification
+      toastError("Login failed. Please check your credentials and try again.");
+
+      // Set error message for form display
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Invalid email or password. Please try again.");
+      }
+
+      // Redirect to home page after a short delay
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
     } finally {
       setIsLoading(false);
     }

@@ -250,9 +250,10 @@ const SignupForm: React.FC<SignupFormProps> = ({
       <Box sx={{ mt: 3, textAlign: "center" }}>
         <Typography variant="body2" color="text.secondary">
           Already have an account?{" "}
-          <Link href="/login" passHref>
+          <Link href="/login" passHref legacyBehavior>
             <Typography
               variant="body2"
+              component="a"
               sx={{
                 color: "primary.main",
                 textDecoration: "none",

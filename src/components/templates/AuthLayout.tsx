@@ -1,4 +1,4 @@
-import React, { ReactNode } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import { Container, Box, Paper, Typography } from "@mui/material";
 
 interface IAuthLayoutProps {
@@ -10,6 +10,14 @@ interface IAuthLayoutProps {
  * Layout component for authentication pages (login/signup)
  */
 const AuthLayout: React.FC<IAuthLayoutProps> = ({ children, title }) => {
+  // Use client-side state for dynamic content to avoid hydration mismatch
+  const [currentYear, setCurrentYear] = useState<number | null>(null);
+
+  // Update year only on client side after initial render
+  useEffect(() => {
+    setCurrentYear(new Date().getFullYear());
+  }, []);
+
   return (
     <Container maxWidth="sm">
       <Box
@@ -59,7 +67,7 @@ const AuthLayout: React.FC<IAuthLayoutProps> = ({ children, title }) => {
           align="center"
           sx={{ mt: 3 }}
         >
-          © {new Date().getFullYear()} KUDOS App - All rights reserved
+          © {currentYear || "2023"} KUDOS App - All rights reserved
         </Typography>
       </Box>
     </Container>

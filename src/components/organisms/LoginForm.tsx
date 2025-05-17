@@ -11,10 +11,10 @@ import {
 import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
 import Link from "next/link";
-import { AuthCredentials } from "@/domain/models/auth";
+import { IAuthCredentials } from "@/domain/models/auth";
 
 interface LoginFormProps {
-  onLogin: (credentials: AuthCredentials) => Promise<void>;
+  onLogin: (credentials: IAuthCredentials) => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
 }
@@ -24,7 +24,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   isLoading = false,
   error = null,
 }) => {
-  const [formData, setFormData] = useState<AuthCredentials>({
+  const [formData, setFormData] = useState<IAuthCredentials>({
     email: "",
     password: "",
   });
@@ -138,9 +138,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
       />
 
       <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-        <Link href="/forgot-password" passHref>
+        <Link href="/forgot-password" passHref legacyBehavior>
           <Typography
             variant="body2"
+            component="a"
             sx={{
               color: "text.secondary",
               textDecoration: "none",
@@ -179,9 +180,10 @@ const LoginForm: React.FC<LoginFormProps> = ({
       <Box sx={{ mt: 3, textAlign: "center" }}>
         <Typography variant="body2" color="text.secondary">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" passHref>
+          <Link href="/signup" passHref legacyBehavior>
             <Typography
               variant="body2"
+              component="a"
               sx={{
                 color: "primary.main",
                 textDecoration: "none",
