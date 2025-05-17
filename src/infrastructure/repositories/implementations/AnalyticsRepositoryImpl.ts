@@ -71,6 +71,7 @@ export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
         mostActiveDay: data.data.mostActiveDay,
         periodStart: data.data.periodStart,
         periodEnd: data.data.periodEnd,
+        topTrendingCategories: data.data.topTrendingCategories,
       };
     } catch (error) {
       console.error(

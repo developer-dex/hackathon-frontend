@@ -113,7 +113,7 @@ export const TopRecognizedIndividuals: React.FC<
                 key={person.name}
                 className="flex flex-col justify-end flex-1 min-w-[60px]"
               >
-                <span className="text-base font-semibold text-blue-400 mt-0.5 px-2">
+                <span className="text-base font-semibold text-blue-400 mt-0.5 px-3">
                   {person.count}
                 </span>
                 <div

@@ -39,6 +39,17 @@ export interface AnalyticsResponseDto {
   data: AnalyticsResponseDtoData;
 }
 
+export interface TrendingWord {
+  count: string;
+  name: number;
+  id?: string;
+}
+
+export interface TrendingCategory {
+  word: string;
+  score: number;
+}
+
 export interface AnalyticsResponseDtoData {
   topRecognizedIndividuals: RecognizedIndividual[];
   topTeams: TeamAnalytics[];
@@ -57,4 +68,5 @@ export interface AnalyticsResponseDtoData {
   mostActiveDay?: DayActivity;
   periodStart?: string;
   periodEnd?: string;
+  topTrendingCategories?: TrendingCategory[];
 }

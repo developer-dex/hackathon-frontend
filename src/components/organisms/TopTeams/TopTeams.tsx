@@ -111,7 +111,7 @@ export const TopTeams: React.FC<ITopTeamsProps> = ({ data, maxY = 60 }) => {
                 className="flex flex-col justify-end flex-1 min-w-[60px]"
               >
                 <span
-                  className="text-lg font-semibold text-pink-400 mt-0.5 tracking-tight transition-colors duration-200 px-0"
+                  className="text-lg font-semibold text-pink-400 mt-0.5 tracking-tight transition-colors duration-200 px-3"
                   ref={(el) => {
                     countsRef.current[idx] = el;
                   }}
