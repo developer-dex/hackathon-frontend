@@ -17,8 +17,11 @@ import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
 import PersonIcon from "@mui/icons-material/Person";
 import BadgeIcon from "@mui/icons-material/Badge";
+import GroupsIcon from "@mui/icons-material/Groups";
+import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import Link from "next/link";
 import { ISignupRequest, EUserRole } from "@/domain/models/auth";
+import { useTeams } from "@/application/hooks";
 
 interface SignupFormProps {
   onSignup: (data: ISignupRequest) => Promise<void>;
@@ -27,24 +30,34 @@ interface SignupFormProps {
   "data-testid"?: string;
 }
 
+interface FormState extends ISignupRequest {
+  confirmPassword: string;
+}
+
 const SignupForm: React.FC<SignupFormProps> = ({
   onSignup,
   isLoading = false,
   error = null,
   "data-testid": testId = "signup-form",
 }) => {
-  const [formData, setFormData] = useState<ISignupRequest>({
+  const { teams, loading: loadingTeams } = useTeams();
+
+  const [formData, setFormData] = useState<FormState>({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: EUserRole.TEAM_MEMBER,
+    teamId: "",
   });
 
   const [formErrors, setFormErrors] = useState({
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "",
+    teamId: "",
   });
 
   const validateForm = (): boolean => {
@@ -53,7 +66,9 @@ const SignupForm: React.FC<SignupFormProps> = ({
       name: "",
       email: "",
       password: "",
+      confirmPassword: "",
       role: "",
+      teamId: "",
     };
 
     // Name validation
@@ -80,6 +95,21 @@ const SignupForm: React.FC<SignupFormProps> = ({
       isValid = false;
     }
 
+    // Confirm password validation
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+      isValid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+      isValid = false;
+    }
+
+    // Team validation
+    if (!formData.teamId) {
+      newErrors.teamId = "Team selection is required";
+      isValid = false;
+    }
+
     setFormErrors(newErrors);
     return isValid;
   };
@@ -93,15 +123,17 @@ const SignupForm: React.FC<SignupFormProps> = ({
   };
 
   const handleSelectChange = (e: SelectChangeEvent) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      role: e.target.value as EUserRole,
+      [name]: name === "role" ? (value as EUserRole) : value,
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
+      // Pass the entire form data including confirmPassword to API
       await onSignup(formData);
     }
   };
@@ -203,6 +235,34 @@ const SignupForm: React.FC<SignupFormProps> = ({
         data-testid={`${testId}-password-input`}
       />
 
+      <TextField
+        fullWidth
+        margin="normal"
+        id="confirmPassword"
+        name="confirmPassword"
+        label="Confirm Password"
+        type="password"
+        variant="outlined"
+        value={formData.confirmPassword}
+        onChange={handleChange}
+        error={!!formErrors.confirmPassword}
+        helperText={formErrors.confirmPassword}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <VerifiedUserIcon />
+            </InputAdornment>
+          ),
+        }}
+        sx={{
+          mb: 2,
+          "& .MuiOutlinedInput-root": {
+            borderRadius: "8px",
+          },
+        }}
+        data-testid={`${testId}-confirm-password-input`}
+      />
+
       <FormControl
         fullWidth
         margin="normal"
@@ -219,6 +279,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
         <Select
           labelId="role-label"
           id="role"
+          name="role"
           value={formData.role}
           label="Role"
           onChange={handleSelectChange}
@@ -239,6 +300,65 @@ const SignupForm: React.FC<SignupFormProps> = ({
             data-testid={`${testId}-role-error`}
           >
             {formErrors.role}
+          </Typography>
+        )}
+      </FormControl>
+
+      <FormControl
+        fullWidth
+        margin="normal"
+        error={!!formErrors.teamId}
+        sx={{
+          mb: 2,
+          "& .MuiOutlinedInput-root": {
+            borderRadius: "8px",
+          },
+        }}
+        data-testid={`${testId}-team-select`}
+      >
+        <InputLabel id="team-label">Team</InputLabel>
+        <Select
+          labelId="team-label"
+          id="teamId"
+          name="teamId"
+          value={formData.teamId}
+          label="Team"
+          onChange={handleSelectChange}
+          startAdornment={
+            <InputAdornment position="start">
+              <GroupsIcon />
+            </InputAdornment>
+          }
+          disabled={loadingTeams || teams.length === 0}
+          data-testid={`${testId}-team-input`}
+          displayEmpty
+        >
+          <MenuItem value="" disabled>
+            Select a team
+          </MenuItem>
+          {loadingTeams ? (
+            <MenuItem disabled value="loading">
+              <CircularProgress size={20} /> Loading teams...
+            </MenuItem>
+          ) : teams.length === 0 ? (
+            <MenuItem disabled value="no-teams">
+              No teams available
+            </MenuItem>
+          ) : (
+            teams.map((team) => (
+              <MenuItem key={team.id} value={team.id}>
+                {team.name}
+              </MenuItem>
+            ))
+          )}
+        </Select>
+        {formErrors.teamId && (
+          <Typography
+            variant="caption"
+            color="error"
+            data-testid={`${testId}-team-error`}
+          >
+            {formErrors.teamId}
           </Typography>
         )}
       </FormControl>

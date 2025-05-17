@@ -13,6 +13,12 @@ export * from "./interfaces";
 // Export implementations
 export * from "./implementations";
 
+// Export AuthRepositoryImpl
+export * from "./implementations/AuthRepositoryImpl";
+
+// Export TeamRepositoryImpl
+export * from "./implementations/TeamRepositoryImpl";
+
 /**
  * Repository implementations go here.
  *

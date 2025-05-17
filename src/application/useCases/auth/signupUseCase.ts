@@ -1,11 +1,11 @@
-import { IAuthResponse, ISignupRequest } from "@/domain/models/auth";
+import { ISignupRequest, ISignupResponse } from "@/domain/models/auth";
 import { IAuthRepository } from "@/infrastructure/repositories/interfaces/repositories/auth.interface";
 import { LocalStorageService } from "@/infrastructure/storage/LocalStorageService";
 
 export class SignupUseCase {
   constructor(private authRepository: IAuthRepository) {}
 
-  async execute(signupData: ISignupRequest): Promise<IAuthResponse | null> {
+  async execute(signupData: ISignupRequest): Promise<ISignupResponse | null> {
     try {
       const response = await this.authRepository.signup(signupData);
 

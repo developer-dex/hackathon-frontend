@@ -2,6 +2,7 @@ import {
   IAuthCredentials,
   IAuthResponse,
   ISignupRequest,
+  ISignupResponse,
   IApiResponse,
   EUserRole,
   EVerificationStatus,
@@ -14,15 +15,33 @@ interface UserDTO {
   name: string;
   email: string;
   role: string;
-  department: string;
+  department?: string;
   verificationStatus: string;
   createdAt: string;
   updatedAt: string;
+  team?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface AuthResponseDTO {
   user: UserDTO;
   token: string;
+}
+
+interface SignupResponseDTO {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  verificationStatus: string;
+  createdAt: string;
+  updatedAt: string;
+  team?: {
+    id: string;
+    name: string;
+  };
 }
 
 /**
@@ -88,9 +107,9 @@ export class AuthRepositoryImpl implements IAuthRepository {
   /**
    * Registers a new user with the provided data
    * @param signupData User registration data
-   * @returns Authentication response for the new user or null if registration fails
+   * @returns Signup response with user data or null if registration fails
    */
-  async signup(signupData: ISignupRequest): Promise<IAuthResponse | null> {
+  async signup(signupData: ISignupRequest): Promise<ISignupResponse | null> {
     try {
       const response = await fetch(`${this.apiBaseUrl}/api/auth/signup`, {
         method: "POST",
@@ -101,7 +120,7 @@ export class AuthRepositoryImpl implements IAuthRepository {
       });
 
       const responseData =
-        (await response.json()) as IApiResponse<AuthResponseDTO>;
+        (await response.json()) as IApiResponse<SignupResponseDTO>;
       console.log("Signup response data:", responseData);
 
       // Check if the response has the expected structure
@@ -110,28 +129,21 @@ export class AuthRepositoryImpl implements IAuthRepository {
         return null;
       }
 
-      const { user, token } = responseData.data;
-
-      // Map the user data from API response to our domain model
-      const mappedUser = {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role as EUserRole,
-        department: user.department,
-        verificationStatus: user.verificationStatus as EVerificationStatus,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
+      // Map the response data to our domain model
+      const signupResponse: ISignupResponse = {
+        id: responseData.data.id,
+        name: responseData.data.name,
+        email: responseData.data.email,
+        role: responseData.data.role as EUserRole,
+        verificationStatus: responseData.data
+          .verificationStatus as EVerificationStatus,
+        createdAt: responseData.data.createdAt,
+        updatedAt: responseData.data.updatedAt,
+        team: responseData.data.team,
+        message: responseData.message,
       };
 
-      // Store auth data using LocalStorageService
-      LocalStorageService.setAuthToken(token);
-      LocalStorageService.setUser(mappedUser);
-
-      return {
-        user: mappedUser,
-        token: token,
-      };
+      return signupResponse;
     } catch (error) {
       console.error("Signup error:", error);
       return null;

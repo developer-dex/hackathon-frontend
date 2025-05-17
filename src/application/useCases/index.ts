@@ -29,5 +29,6 @@
  * };
  */
 
-// Export all auth use cases
+// Export all use cases
 export * from "./auth";
+export * from "./team";
