@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Box, Typography, Paper, Grid, Button } from "@mui/material";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { Box, Typography, Paper, Button } from "@mui/material";
 import MainLayout from "@/components/templates/MainLayout";
 import { IUser } from "@/domain/models/auth";
 import Link from "next/link";
@@ -15,6 +15,7 @@ import {
 import { GetAnalyticsUseCase } from "@/application/useCases/analytics/GetAnalyticsUseCase";
 import { AnalyticsRepositoryImpl } from "@/infrastructure/repositories/implementations/AnalyticsRepositoryImpl";
 import { toastError } from "@/application/utils/toast";
+import { debounce } from "lodash";
 
 interface DashboardProps {
   user: IUser | null;
@@ -31,53 +32,63 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     useState<AnalyticsResponseDtoData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const analyticsUseCase = new GetAnalyticsUseCase(
-    new AnalyticsRepositoryImpl()
+  // Memoize the analytics use case to prevent recreation on each render
+  const analyticsUseCase = useMemo(
+    () => new GetAnalyticsUseCase(new AnalyticsRepositoryImpl()),
+    []
   );
 
-  const timePeriodOptions = [
-    { value: "weekly", label: "Weekly" },
-    { value: "monthly", label: "Monthly" },
-    { value: "yearly", label: "Yearly" },
-  ];
+  // Memoize time period options to prevent recreation on each render
+  const timePeriodOptions = useMemo(
+    () => [
+      { value: "weekly", label: "Weekly" },
+      { value: "monthly", label: "Monthly" },
+      { value: "yearly", label: "Yearly" },
+    ],
+    []
+  );
 
   useEffect(() => {
     const authStatus = authUseCase.checkAuth.execute();
     setIsAuthenticated(authStatus);
   }, [user]);
 
-  useEffect(() => {
-    const fetchData = async () => {
+  // Debounced fetch function
+  const debouncedFetchData = useCallback(
+    debounce(async (period: TimePeriod) => {
       setIsLoading(true);
       try {
-        const data = await analyticsUseCase.execute(timePeriod);
-        console.log(data);
+        const data = await analyticsUseCase.execute(period);
         setAnalyticsData(data);
       } catch (error) {
         console.error("Error fetching analytics data:", error);
 
-        // Handle session expiration
         if (
           error instanceof Error &&
           error.message.includes("session has expired")
         ) {
           toastError("Your session has expired. Please log in again.");
-          onLogout(); // Clear auth data
-          router.push("/login"); // Redirect to login page
+          onLogout();
+          router.push("/login");
           return;
         }
 
-        // Handle other errors
         toastError("Failed to load analytics data. Please try again later.");
       } finally {
         setIsLoading(false);
       }
-    };
+    }, 300),
+    [analyticsUseCase, onLogout, router]
+  );
 
+  useEffect(() => {
     if (isAuthenticated) {
-      fetchData();
+      debouncedFetchData(timePeriod);
     }
-  }, [timePeriod, isAuthenticated, router, onLogout, analyticsUseCase]);
+    return () => {
+      debouncedFetchData.cancel();
+    };
+  }, [timePeriod, isAuthenticated, debouncedFetchData]);
 
   return (
     <MainLayout user={user} onLogout={onLogout}>
@@ -97,9 +108,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             />
           </Box>
 
-          <Grid container spacing={3} sx={{ mt: 4 }}>
-            <Grid sx={{ gridColumn: "span 12" }}>
-              <Paper sx={{ p: 3 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 4 }}>
+            <Box>
+              <Paper sx={{ p: 3, minHeight: "200px" }}>
                 <Typography variant="h6" gutterBottom>
                   User Activity Overview
                 </Typography>
@@ -107,41 +118,59 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   This dashboard provides insights about user kudos activity
                   across the organization.
                 </Typography>
-                {analyticsData && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2">
-                      Total Kudos: {analyticsData.totalKudos}
-                    </Typography>
-                    <Typography variant="body2">
-                      Average Kudos per Person:{" "}
-                      {analyticsData.avgKudosPerPerson}
-                    </Typography>
-                    <Typography variant="body2">
-                      Most Active Day:{" "}
-                      {analyticsData.mostActiveDay?.toString() || "N/A"}
-                    </Typography>
-                    <Typography variant="body2">
-                      Period:{" "}
-                      {analyticsData.periodStart
-                        ? new Date(
-                            analyticsData.periodStart
-                          ).toLocaleDateString()
-                        : "N/A"}{" "}
-                      -{" "}
-                      {analyticsData.periodEnd
-                        ? new Date(analyticsData.periodEnd).toLocaleDateString()
-                        : "N/A"}
-                    </Typography>
-                  </Box>
-                )}
+                <Box sx={{ mt: 2, minHeight: "100px" }}>
+                  {isLoading ? (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        height: "100px",
+                      }}
+                    >
+                      <Typography>Loading...</Typography>
+                    </Box>
+                  ) : analyticsData ? (
+                    <Box>
+                      <Typography variant="body2">
+                        Total Kudos: {analyticsData.totalKudos}
+                      </Typography>
+                      <Typography variant="body2">
+                        Average Kudos per Person:{" "}
+                        {analyticsData.avgKudosPerPerson}
+                      </Typography>
+                      <Typography variant="body2">
+                        Most Active Day:{" "}
+                        {analyticsData.mostActiveDay?.toString() || "N/A"}
+                      </Typography>
+                      <Typography variant="body2">
+                        Period:{" "}
+                        {analyticsData.periodStart
+                          ? new Date(
+                              analyticsData.periodStart
+                            ).toLocaleDateString()
+                          : "N/A"}{" "}
+                        -{" "}
+                        {analyticsData.periodEnd
+                          ? new Date(
+                              analyticsData.periodEnd
+                            ).toLocaleDateString()
+                          : "N/A"}
+                      </Typography>
+                    </Box>
+                  ) : null}
+                </Box>
               </Paper>
-            </Grid>
-            <Grid
-              sx={{ gridColumn: "span 12" }}
-              className="flex flex-row gap-4"
+            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 3,
+                flexDirection: { xs: "column", md: "row" },
+              }}
             >
-              <Grid sx={{ gridColumn: { xs: "span 12", md: "span 6" } }}>
-                <Paper sx={{ p: 3, height: "100%" }}>
+              <Box sx={{ flex: 1 }}>
+                <Paper sx={{ p: 3, height: "100%", minHeight: "400px" }}>
                   <Typography variant="h6" gutterBottom>
                     Top Recognized Individuals
                   </Typography>
@@ -154,6 +183,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                       p: 2,
                       backgroundColor: "#f5f5f5",
                       borderRadius: 1,
+                      minHeight: "300px",
                     }}
                   >
                     {isLoading ? (
@@ -206,9 +236,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                     ) : null}
                   </Box>
                 </Paper>
-              </Grid>
-              <Grid sx={{ gridColumn: "span 12" }}>
-                <Paper sx={{ p: 3, height: "100%" }}>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Paper sx={{ p: 3, height: "100%", minHeight: "400px" }}>
                   <Typography variant="h6" gutterBottom>
                     Top Teams
                   </Typography>
@@ -221,6 +251,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                       p: 2,
                       backgroundColor: "#f5f5f5",
                       borderRadius: 1,
+                      minHeight: "300px",
                     }}
                   >
                     {isLoading ? (
@@ -271,9 +302,9 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                     ) : null}
                   </Box>
                 </Paper>
-              </Grid>
-            </Grid>
-          </Grid>
+              </Box>
+            </Box>
+          </Box>
         </Box>
       ) : (
         <Box
