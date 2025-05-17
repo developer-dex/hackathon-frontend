@@ -5,6 +5,6 @@ import {
 } from "@/domain/models/auth";
 
 export interface IAuthRepository {
-  login: (credentials: IAuthCredentials) => Promise<IAuthResponse>;
-  signup: (signupData: ISignupRequest) => Promise<IAuthResponse>;
+  login: (credentials: IAuthCredentials) => Promise<IAuthResponse | null>;
+  signup: (signupData: ISignupRequest) => Promise<IAuthResponse | null>;
 }

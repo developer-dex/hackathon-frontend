@@ -7,7 +7,8 @@ export class CheckAuthUseCase {
   execute(): boolean {
     if (typeof window !== "undefined") {
       try {
-        return !!localStorage.getItem("authToken");
+        const token = localStorage.getItem("auth_token");
+        return !!token && this.validateTokenFormat(token);
       } catch (error) {
         console.error("Error checking authentication:", error);
         return false;
@@ -35,7 +36,6 @@ export class CheckAuthUseCase {
 
   /**
    * Gets user information from localStorage if available
-   * In a real implementation, this would decode the JWT token
    */
   getCurrentUser(): IUser | null {
     if (typeof window !== "undefined") {

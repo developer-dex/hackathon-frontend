@@ -3,7 +3,7 @@ export class LogoutUseCase {
     if (typeof window !== "undefined") {
       try {
         // Clear all auth-related data
-        localStorage.removeItem("authToken");
+        localStorage.removeItem("auth_token");
         localStorage.removeItem("user");
         return true;
       } catch (error) {

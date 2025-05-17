@@ -3,11 +3,21 @@ export enum EUserRole {
   TEAM_MEMBER = "TEAM_MEMBER",
 }
 
+export enum EVerificationStatus {
+  VERIFIED = "VERIFIED",
+  PENDING = "PENDING",
+  REJECTED = "REJECTED",
+}
+
 export interface IUser {
   id: string;
   email: string;
   name: string;
-  role: EUserRole;
+  role: EUserRole | string;
+  department?: string;
+  verificationStatus?: EVerificationStatus | string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface IAuthCredentials {
@@ -23,4 +33,10 @@ export interface ISignupRequest extends IAuthCredentials {
 export interface IAuthResponse {
   user: IUser;
   token: string;
+}
+
+export interface IApiResponse<T> {
+  success: boolean;
+  data: T;
+  message: string;
 }
