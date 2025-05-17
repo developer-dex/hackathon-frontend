@@ -1,0 +1,1 @@
+export { TopTeams } from "./TopTeams";

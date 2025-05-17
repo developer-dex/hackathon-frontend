@@ -3,7 +3,18 @@ import { Box, Typography, Paper, Grid, Button } from "@mui/material";
 import MainLayout from "@/components/templates/MainLayout";
 import { IUser } from "@/domain/models/auth";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { authUseCase } from "@/application/useCases";
+import { TopRecognizedIndividuals } from "@/components/organisms/TopRecognizedIndividuals";
+import { TopTeams } from "@/components/organisms/TopTeams";
+import { TimePeriodFilter } from "@/components/atoms/TimePeriodFilter";
+import {
+  TimePeriod,
+  AnalyticsResponseDtoData,
+} from "@/domain/models/analytics";
+import { GetAnalyticsUseCase } from "@/application/useCases/analytics/GetAnalyticsUseCase";
+import { AnalyticsRepositoryImpl } from "@/infrastructure/repositories/implementations/AnalyticsRepositoryImpl";
+import { toastError } from "@/application/utils/toast";
 
 interface DashboardProps {
   user: IUser | null;
@@ -11,23 +22,80 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
-  // Add state to track authentication status on client side
+  const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>(
+    "weekly" as TimePeriod
+  );
+  const [analyticsData, setAnalyticsData] =
+    useState<AnalyticsResponseDtoData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Check authentication on component mount
+  const analyticsUseCase = new GetAnalyticsUseCase(
+    new AnalyticsRepositoryImpl()
+  );
+
+  const timePeriodOptions = [
+    { value: "weekly", label: "Weekly" },
+    { value: "monthly", label: "Monthly" },
+    { value: "yearly", label: "Yearly" },
+  ];
+
   useEffect(() => {
     const authStatus = authUseCase.checkAuth.execute();
     setIsAuthenticated(authStatus);
   }, [user]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await analyticsUseCase.execute(timePeriod);
+        console.log(data);
+        setAnalyticsData(data);
+      } catch (error) {
+        console.error("Error fetching analytics data:", error);
+
+        // Handle session expiration
+        if (
+          error instanceof Error &&
+          error.message.includes("session has expired")
+        ) {
+          toastError("Your session has expired. Please log in again.");
+          onLogout(); // Clear auth data
+          router.push("/login"); // Redirect to login page
+          return;
+        }
+
+        // Handle other errors
+        toastError("Failed to load analytics data. Please try again later.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [timePeriod, isAuthenticated, router, onLogout, analyticsUseCase]);
+
   return (
     <MainLayout user={user} onLogout={onLogout}>
       {user && isAuthenticated ? (
-        // Show dashboard content if user is logged in
         <Box sx={{ maxWidth: "1200px", margin: "0 auto", padding: "20px" }}>
           <Typography variant="h4" component="h1" gutterBottom align="center">
             Analytics Dashboard
           </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+            <Typography variant="subtitle1" sx={{ mr: 2 }}>
+              Time Period
+            </Typography>
+            <TimePeriodFilter
+              value={timePeriod}
+              onChange={(value) => setTimePeriod(value as TimePeriod)}
+              options={timePeriodOptions}
+            />
+          </Box>
 
           <Grid container spacing={3} sx={{ mt: 4 }}>
             <Grid sx={{ gridColumn: "span 12" }}>
@@ -36,80 +104,178 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
                   User Activity Overview
                 </Typography>
                 <Typography variant="body1">
-                  This dashboard will provide insights about user kudos activity
-                  across the organization. Currently in development.
+                  This dashboard provides insights about user kudos activity
+                  across the organization.
                 </Typography>
+                {analyticsData && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2">
+                      Total Kudos: {analyticsData.totalKudos}
+                    </Typography>
+                    <Typography variant="body2">
+                      Average Kudos per Person:{" "}
+                      {analyticsData.avgKudosPerPerson}
+                    </Typography>
+                    <Typography variant="body2">
+                      Most Active Day:{" "}
+                      {analyticsData.mostActiveDay?.toString() || "N/A"}
+                    </Typography>
+                    <Typography variant="body2">
+                      Period:{" "}
+                      {analyticsData.periodStart
+                        ? new Date(
+                            analyticsData.periodStart
+                          ).toLocaleDateString()
+                        : "N/A"}{" "}
+                      -{" "}
+                      {analyticsData.periodEnd
+                        ? new Date(analyticsData.periodEnd).toLocaleDateString()
+                        : "N/A"}
+                    </Typography>
+                  </Box>
+                )}
               </Paper>
             </Grid>
-
-            <Grid sx={{ gridColumn: { xs: "span 12", md: "span 6" } }}>
-              <Paper sx={{ p: 3, height: "100%" }}>
-                <Typography variant="h6" gutterBottom>
-                  Top Receivers
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Team members who received the most kudos this month
-                </Typography>
-                <Box
-                  sx={{
-                    mt: 2,
-                    p: 2,
-                    backgroundColor: "#f5f5f5",
-                    borderRadius: 1,
-                  }}
-                >
-                  <Typography>Data visualization coming soon</Typography>
-                </Box>
-              </Paper>
-            </Grid>
-
-            <Grid sx={{ gridColumn: { xs: "span 12", md: "span 6" } }}>
-              <Paper sx={{ p: 3, height: "100%" }}>
-                <Typography variant="h6" gutterBottom>
-                  Top Categories
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Most common kudos categories being used
-                </Typography>
-                <Box
-                  sx={{
-                    mt: 2,
-                    p: 2,
-                    backgroundColor: "#f5f5f5",
-                    borderRadius: 1,
-                  }}
-                >
-                  <Typography>Data visualization coming soon</Typography>
-                </Box>
-              </Paper>
-            </Grid>
-
-            <Grid sx={{ gridColumn: "span 12" }}>
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  Monthly Kudos Trend
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Kudos given per month over the past year
-                </Typography>
-                <Box
-                  sx={{
-                    mt: 2,
-                    p: 4,
-                    backgroundColor: "#f5f5f5",
-                    borderRadius: 1,
-                  }}
-                >
-                  <Typography align="center">
-                    Chart will be displayed here
+            <Grid
+              sx={{ gridColumn: "span 12" }}
+              className="flex flex-row gap-4"
+            >
+              <Grid sx={{ gridColumn: { xs: "span 12", md: "span 6" } }}>
+                <Paper sx={{ p: 3, height: "100%" }}>
+                  <Typography variant="h6" gutterBottom>
+                    Top Recognized Individuals
                   </Typography>
-                </Box>
-              </Paper>
+                  <Typography variant="body2" color="text.secondary">
+                    Team members who received the most kudos this {timePeriod}
+                  </Typography>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      backgroundColor: "#f5f5f5",
+                      borderRadius: 1,
+                    }}
+                  >
+                    {isLoading ? (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          height: "200px",
+                        }}
+                      >
+                        <Typography>Loading...</Typography>
+                      </Box>
+                    ) : analyticsData ? (
+                      <>
+                        <TopRecognizedIndividuals
+                          data={analyticsData.topRecognizedIndividuals.map(
+                            (item) => ({
+                              name: item.name,
+                              count: item.count,
+                            })
+                          )}
+                          maxY={
+                            timePeriod === "weekly"
+                              ? 6
+                              : timePeriod === "monthly"
+                              ? 20
+                              : 90
+                          }
+                        />
+                        <div className="flex flex-row justify-between items-center bg-gray-100 rounded-b-lg px-3 min-h-[38px] w-full gap-4">
+                          {analyticsData.topRecognizedIndividuals
+                            .slice()
+                            .sort((a, b) => b.count - a.count)
+                            .map((person) => (
+                              <div
+                                key={person.name}
+                                className="flex flex-col items-center flex-1 min-w-[60px] max-w-[80px] overflow-hidden"
+                              >
+                                <span
+                                  className="text-sm text-gray-600 text-center truncate max-w-[70px]"
+                                  title={person.name}
+                                >
+                                  {person.name}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </Box>
+                </Paper>
+              </Grid>
+              <Grid sx={{ gridColumn: "span 12" }}>
+                <Paper sx={{ p: 3, height: "100%" }}>
+                  <Typography variant="h6" gutterBottom>
+                    Top Teams
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Teams with the most kudos this {timePeriod}
+                  </Typography>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      backgroundColor: "#f5f5f5",
+                      borderRadius: 1,
+                    }}
+                  >
+                    {isLoading ? (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          height: "200px",
+                        }}
+                      >
+                        <Typography>Loading...</Typography>
+                      </Box>
+                    ) : analyticsData ? (
+                      <>
+                        <TopTeams
+                          data={analyticsData.topTeams.map((item) => ({
+                            name: item.name,
+                            count: item.count,
+                          }))}
+                          maxY={
+                            timePeriod === "weekly"
+                              ? 15
+                              : timePeriod === "monthly"
+                              ? 60
+                              : 600
+                          }
+                        />
+                        <div className="flex flex-row justify-between items-center bg-gray-100 rounded-b-lg px-3 min-h-[38px] w-full gap-4">
+                          {analyticsData.topTeams
+                            .slice()
+                            .sort((a, b) => b.count - a.count)
+                            .map((team) => (
+                              <div
+                                key={team.name}
+                                className="flex flex-col items-center flex-1 min-w-[60px] max-w-[80px] overflow-hidden"
+                              >
+                                <span
+                                  className="text-sm text-gray-600 text-center truncate max-w-[70px]"
+                                  title={team.name}
+                                >
+                                  {team.name}
+                                </span>
+                              </div>
+                            ))}
+                        </div>
+                      </>
+                    ) : null}
+                  </Box>
+                </Paper>
+              </Grid>
             </Grid>
           </Grid>
         </Box>
       ) : (
-        // Show login prompt if user is not logged in
         <Box
           sx={{
             maxWidth: "800px",

@@ -1,0 +1,14 @@
+.timePeriodFilter {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  font-size: 1rem;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.timePeriodFilter:focus {
+  border-color: #6366f1;
+}
