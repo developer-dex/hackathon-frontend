@@ -7,7 +7,10 @@ import { useRouter } from "next/router";
 import { authUseCase } from "@/application/useCases";
 import { TopRecognizedIndividuals } from "@/components/organisms/TopRecognizedIndividuals";
 import { TopTeams } from "@/components/organisms/TopTeams";
-import { TimePeriodFilter } from "@/components/atoms/TimePeriodFilter";
+import {
+  TimePeriodSelector,
+  ETimePeriod,
+} from "@/components/molecules/TimePeriodSelector";
 import {
   TimePeriod,
   AnalyticsResponseDtoData,
@@ -104,70 +107,108 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
             Analytics Dashboard
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ mr: 2 }}>
-              Time Period
-            </Typography>
-            <TimePeriodFilter
-              value={timePeriod}
-              onChange={(value) => setTimePeriod(value as TimePeriod)}
-              options={timePeriodOptions}
+            <TimePeriodSelector
+              value={
+                (timePeriod.charAt(0).toUpperCase() +
+                  timePeriod.slice(1)) as ETimePeriod
+              }
+              onChange={(value) =>
+                setTimePeriod(value.toLowerCase() as TimePeriod)
+              }
+              label="Time Period"
             />
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 4 }}>
-            <Box>
-              <Paper sx={{ p: 3, minHeight: "200px" }}>
-                <Typography variant="h6" gutterBottom>
-                  User Activity Overview
-                </Typography>
-                <Typography variant="body1">
-                  This dashboard provides insights about user kudos activity
-                  across the organization.
-                </Typography>
-                <Box sx={{ mt: 2, minHeight: "100px" }}>
-                  {isLoading ? (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        height: "100px",
-                      }}
-                    >
-                      <Typography>Loading...</Typography>
-                    </Box>
-                  ) : analyticsData ? (
-                    <Box>
-                      <Typography variant="body2">
-                        Total Kudos: {analyticsData.totalKudos}
-                      </Typography>
-                      <Typography variant="body2">
-                        Average Kudos per Person:{" "}
+            {/* Analytics Summary Section - Tailwind version */}
+            <div className="w-full flex flex-col gap-4">
+              <h2 className="text-lg font-semibold mb-2">
+                User Activity Overview
+              </h2>
+              <p className="text-gray-500 mb-4">
+                This dashboard provides insights about user kudos activity
+                across the organization.
+              </p>
+              {isLoading ? (
+                <div className="flex justify-center items-center h-32">
+                  <span className="text-gray-400">Loading...</span>
+                </div>
+              ) : analyticsData ? (
+                <div className="flex flex-col md:flex-row gap-4">
+                  {/* Total Kudos Card */}
+                  <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col justify-between">
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">
+                        Total Kudos
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900">
+                        {analyticsData.totalKudos}
+                      </div>
+                    </div>
+                    {/* Example trend, replace with your real data */}
+                    <div className="mt-2 text-green-600 text-sm flex items-center">
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 10l7-7m0 0l7 7m-7-7v18"
+                        />
+                      </svg>
+                      +12% from last month
+                    </div>
+                  </div>
+                  {/* Avg Kudos per Person Card */}
+                  <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col justify-between">
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">
+                        Avg. Kudos per Person
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900">
                         {analyticsData.avgKudosPerPerson}
-                      </Typography>
-                      <Typography variant="body2">
-                        Most Active Day:{" "}
-                        {analyticsData.mostActiveDay?.toString() || "N/A"}
-                      </Typography>
-                      <Typography variant="body2">
-                        Period:{" "}
-                        {analyticsData.periodStart
-                          ? new Date(
-                              analyticsData.periodStart
-                            ).toLocaleDateString()
-                          : "N/A"}{" "}
-                        -{" "}
-                        {analyticsData.periodEnd
-                          ? new Date(
-                              analyticsData.periodEnd
-                            ).toLocaleDateString()
-                          : "N/A"}
-                      </Typography>
-                    </Box>
-                  ) : null}
-                </Box>
-              </Paper>
-            </Box>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-green-600 text-sm flex items-center">
+                      <svg
+                        className="w-4 h-4 mr-1"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 10l7-7m0 0l7 7m-7-7v18"
+                        />
+                      </svg>
+                      +0.5 from last month
+                    </div>
+                  </div>
+                  {/* Most Active Day Card */}
+                  <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col justify-between">
+                    <div>
+                      <div className="text-gray-500 text-sm mb-1">
+                        Most Active Day
+                      </div>
+                      <div className="text-3xl font-bold text-gray-900">
+                        {analyticsData.mostActiveDay?.day || "N/A"}
+                      </div>
+                    </div>
+                    <div className="mt-2 text-gray-500 text-sm">
+                      {analyticsData.mostActiveDay?.percentage != null
+                        ? `${analyticsData.mostActiveDay.percentage}% of all kudos sent`
+                        : "N/A"}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
             <Box
               sx={{
                 display: "flex",
