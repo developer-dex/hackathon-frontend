@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="180" height="60" viewBox="0 0 180 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="180" height="60" fill="white"/>
+  
+  <!-- K letter - purple -->
+  <path d="M30 10H45V27L65 10H85L55 30L85 50H65L45 33V50H30V10Z" fill="#6C5CE7"/>
+  
+  <!-- W letter that clearly looks like a W not an N -->
+  <path d="M100 10L107 47L115 20L123 47L130 10H145L133 50H123L115 30L107 50H97L85 10H100Z" fill="#D94AE6"/>
+  
+  <!-- Small star accent -->
+  <path d="M15 25L17 30H23L19 33L20 38L15 35L10 38L12 33L7 30H13L15 25Z" fill="#D94AE6"/>
+</svg> 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -13,7 +13,9 @@ import {
   useTheme,
 } from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import Link from "next/link";
+import Image from "next/image";
 import { IUser, EUserRole } from "@/domain/models/auth";
 
 interface IHeaderProps {
@@ -29,9 +31,9 @@ const Header: React.FC<IHeaderProps> = ({
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuAnchorEl, setMobileMenuAnchorEl] =
-    React.useState<null | HTMLElement>(null);
+    useState<null | HTMLElement>(null);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -50,223 +52,278 @@ const Header: React.FC<IHeaderProps> = ({
   };
 
   return (
-    <AppBar
-      position="static"
-      color="default"
-      elevation={1}
-      data-testid={testId}
-    >
-      <Toolbar>
-        <Link href="/" passHref>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{
-              flexGrow: 1,
-              fontWeight: "bold",
-              color: "primary.main",
-              cursor: "pointer",
-            }}
-            data-testid={`${testId}-logo`}
-          >
-            KUDOS App
-          </Typography>
-        </Link>
+    <>
+      <AppBar
+        position="static"
+        elevation={2}
+        sx={{
+          backgroundColor: "white",
+          borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
+        }}
+      >
+        <Toolbar sx={{ justifyContent: "space-between" }}>
+          {/* Logo and Brand */}
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <Link href="/" passHref>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <Box
+                  sx={{ mr: 1, height: 40, width: 120, position: "relative" }}
+                >
+                  <Image
+                    src="/images/kudos-logo.svg"
+                    alt="KUDOS App Logo"
+                    fill
+                    style={{ objectFit: "contain" }}
+                    priority
+                  />
+                </Box>
+              </Box>
+            </Link>
+          </Box>
 
-        {isMobile ? (
-          <>
-            <IconButton
-              size="large"
-              edge="end"
-              color="inherit"
-              aria-label="menu"
-              onClick={handleMobileMenu}
-              data-testid={`${testId}-mobile-menu-button`}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Menu
-              anchorEl={mobileMenuAnchorEl}
-              open={Boolean(mobileMenuAnchorEl)}
-              onClose={handleMobileMenuClose}
-              data-testid={`${testId}-mobile-menu`}
-            >
-              {!user ? (
-                <>
-                  <MenuItem
-                    onClick={handleMobileMenuClose}
-                    data-testid={`${testId}-mobile-login`}
-                  >
-                    <Link href="/login" passHref>
-                      <Typography sx={{ width: "100%", cursor: "pointer" }}>
-                        Login
-                      </Typography>
-                    </Link>
-                  </MenuItem>
-                  <MenuItem
-                    onClick={handleMobileMenuClose}
-                    data-testid={`${testId}-mobile-signup`}
-                  >
-                    <Link href="/signup" passHref>
-                      <Typography sx={{ width: "100%", cursor: "pointer" }}>
-                        Sign Up
-                      </Typography>
-                    </Link>
-                  </MenuItem>
-                </>
-              ) : (
-                <>
-                  <MenuItem
-                    onClick={handleMobileMenuClose}
-                    data-testid={`${testId}-mobile-kudos`}
-                  >
-                    <Link href="/kudos" passHref>
-                      <Typography sx={{ width: "100%", cursor: "pointer" }}>
-                        All Kudos
-                      </Typography>
-                    </Link>
-                  </MenuItem>
-                  {user.role === EUserRole.TECH_LEAD && (
-                    <MenuItem
-                      onClick={handleMobileMenuClose}
-                      data-testid={`${testId}-mobile-create-kudos`}
-                    >
-                      <Link href="/create-kudos" passHref>
-                        <Typography sx={{ width: "100%", cursor: "pointer" }}>
-                          Create Kudos
+          {/* Mobile Menu */}
+          {isMobile ? (
+            <>
+              <IconButton
+                size="large"
+                edge="end"
+                color="inherit"
+                aria-label="menu"
+                onClick={handleMobileMenu}
+                sx={{ color: "primary.main" }}
+              >
+                <MenuIcon />
+              </IconButton>
+              <Menu
+                anchorEl={mobileMenuAnchorEl}
+                open={Boolean(mobileMenuAnchorEl)}
+                onClose={handleMobileMenuClose}
+                PaperProps={{
+                  elevation: 3,
+                  sx: { minWidth: 200, mt: 1 },
+                }}
+              >
+                {!user ? (
+                  <>
+                    <MenuItem onClick={handleMobileMenuClose}>
+                      <Link href="/login" passHref>
+                        <Typography
+                          sx={{
+                            color: "primary.main",
+                            fontWeight: "medium",
+                            width: "100%",
+                          }}
+                        >
+                          Login
                         </Typography>
                       </Link>
                     </MenuItem>
-                  )}
-                  <MenuItem
-                    onClick={handleMobileMenuClose}
-                    data-testid={`${testId}-mobile-profile`}
-                  >
-                    <Link href="/profile" passHref>
-                      <Typography sx={{ width: "100%", cursor: "pointer" }}>
-                        Profile
-                      </Typography>
-                    </Link>
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => {
-                      onLogout();
-                      handleMobileMenuClose();
-                    }}
-                    data-testid={`${testId}-mobile-logout`}
-                  >
-                    <Typography>Logout</Typography>
-                  </MenuItem>
-                </>
-              )}
-            </Menu>
-          </>
-        ) : (
-          <Box
-            sx={{ display: "flex", alignItems: "center" }}
-            data-testid={`${testId}-desktop-menu`}
-          >
-            <Link href="/kudos" passHref>
-              <Button
-                color="inherit"
-                sx={{ mx: 1, textTransform: "none", cursor: "pointer" }}
-                data-testid={`${testId}-desktop-kudos`}
-              >
-                All Kudos
-              </Button>
-            </Link>
-
-            {user ? (
-              <>
-                {user.role === EUserRole.TECH_LEAD && (
-                  <Link href="/create-kudos" passHref>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      sx={{
-                        mx: 1,
-                        textTransform: "none",
-                        cursor: "pointer",
-                      }}
-                      data-testid={`${testId}-desktop-create-kudos`}
-                    >
-                      Create Kudos
-                    </Button>
-                  </Link>
-                )}
-                <Box sx={{ ml: 2 }} data-testid={`${testId}-user-menu`}>
-                  <IconButton
-                    onClick={handleMenu}
-                    sx={{ p: 0 }}
-                    data-testid={`${testId}-user-avatar`}
-                  >
-                    <Avatar
-                      alt={user.name}
-                      src="/images/avatar.jpg"
-                      sx={{ width: 36, height: 36 }}
-                    />
-                  </IconButton>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={Boolean(anchorEl)}
-                    onClose={handleClose}
-                    data-testid={`${testId}-user-dropdown`}
-                  >
-                    <MenuItem data-testid={`${testId}-user-name`}>
-                      <Typography variant="body2">{user.name}</Typography>
+                    <MenuItem onClick={handleMobileMenuClose}>
+                      <Link href="/signup" passHref>
+                        <Typography sx={{ width: "100%", cursor: "pointer" }}>
+                          Sign Up
+                        </Typography>
+                      </Link>
                     </MenuItem>
-                    <MenuItem data-testid={`${testId}-user-email`}>
-                      <Typography variant="body2" color="text.secondary">
-                        {user.email}
-                      </Typography>
+                  </>
+                ) : (
+                  <>
+                    <MenuItem onClick={handleMobileMenuClose}>
+                      <Link href="/kudos" passHref>
+                        <Typography sx={{ width: "100%", cursor: "pointer" }}>
+                          All Kudos
+                        </Typography>
+                      </Link>
                     </MenuItem>
-                    <MenuItem data-testid={`${testId}-user-profile`}>
+                    {user.role === EUserRole.TECH_LEAD && (
+                      <MenuItem onClick={handleMobileMenuClose}>
+                        <Link href="/create-kudos" passHref>
+                          <Typography sx={{ width: "100%", cursor: "pointer" }}>
+                            Create Kudos
+                          </Typography>
+                        </Link>
+                      </MenuItem>
+                    )}
+                    <MenuItem onClick={handleMobileMenuClose}>
                       <Link href="/profile" passHref>
-                        <Typography sx={{ cursor: "pointer" }}>
+                        <Typography sx={{ width: "100%", cursor: "pointer" }}>
                           Profile
                         </Typography>
                       </Link>
                     </MenuItem>
                     <MenuItem
-                      onClick={onLogout}
-                      data-testid={`${testId}-user-logout`}
+                      onClick={() => {
+                        onLogout();
+                        handleMobileMenuClose();
+                      }}
                     >
-                      Logout
+                      <Typography color="error">Logout</Typography>
                     </MenuItem>
-                  </Menu>
-                </Box>
-              </>
-            ) : (
-              <>
-                <Link href="/login" passHref>
-                  <Button
-                    color="inherit"
-                    sx={{ ml: 1, textTransform: "none", cursor: "pointer" }}
-                    data-testid={`${testId}-desktop-login`}
-                  >
-                    Login
-                  </Button>
-                </Link>
-                <Link href="/signup" passHref>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    sx={{
-                      ml: 1,
-                      textTransform: "none",
-                      cursor: "pointer",
-                    }}
-                    data-testid={`${testId}-desktop-signup`}
-                  >
-                    Sign Up
-                  </Button>
-                </Link>
-              </>
-            )}
-          </Box>
-        )}
-      </Toolbar>
-    </AppBar>
+                  </>
+                )}
+              </Menu>
+            </>
+          ) : (
+            <Box sx={{ display: "flex", alignItems: "center" }}>
+              {/* Navigation links */}
+              <Link href="/kudos" passHref>
+                <Button
+                  color="inherit"
+                  sx={{
+                    mx: 1,
+                    textTransform: "none",
+                    cursor: "pointer",
+                    color: "text.primary",
+                    "&:hover": {
+                      color: "primary.main",
+                    },
+                  }}
+                >
+                  All Kudos
+                </Button>
+              </Link>
+
+              {/* Authentication Section */}
+              {user ? (
+                <>
+                  {/* Create Kudos Button (only for tech leads) */}
+                  {user.role === EUserRole.TECH_LEAD && (
+                    <Link href="/create-kudos" passHref>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        sx={{
+                          mx: 2,
+                          textTransform: "none",
+                          cursor: "pointer",
+                          borderRadius: "20px",
+                          px: 3,
+                        }}
+                      >
+                        Create Kudos
+                      </Button>
+                    </Link>
+                  )}
+
+                  {/* User profile avatar and menu */}
+                  <Box sx={{ ml: 1 }}>
+                    <IconButton
+                      onClick={handleMenu}
+                      sx={{
+                        p: 0.5,
+                        border: "2px solid transparent",
+                        "&:hover": {
+                          border: "2px solid",
+                          borderColor: "primary.light",
+                        },
+                      }}
+                    >
+                      <Avatar
+                        alt={user.name}
+                        src="/images/avatar.jpg"
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          backgroundColor: "primary.light",
+                        }}
+                      >
+                        {user.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                    </IconButton>
+                    <Menu
+                      anchorEl={anchorEl}
+                      open={Boolean(anchorEl)}
+                      onClose={handleClose}
+                      transformOrigin={{ horizontal: "right", vertical: "top" }}
+                      anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+                      PaperProps={{
+                        elevation: 3,
+                        sx: { minWidth: 200, mt: 1 },
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          px: 2,
+                          py: 1,
+                          borderBottom: "1px solid",
+                          borderColor: "divider",
+                        }}
+                      >
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          {user.name}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ wordBreak: "break-all" }}
+                        >
+                          {user.email}
+                        </Typography>
+                      </Box>
+                      <MenuItem onClick={handleClose}>
+                        <Link href="/profile" passHref>
+                          <Typography sx={{ cursor: "pointer" }}>
+                            My Profile
+                          </Typography>
+                        </Link>
+                      </MenuItem>
+                      <MenuItem onClick={onLogout} sx={{ color: "error.main" }}>
+                        Logout
+                      </MenuItem>
+                    </Menu>
+                  </Box>
+                </>
+              ) : (
+                <>
+                  {/* Login Button */}
+                  <Link href="/login" passHref>
+                    <Button
+                      color="primary"
+                      startIcon={<AccountCircleIcon />}
+                      sx={{
+                        ml: 1,
+                        textTransform: "none",
+                        cursor: "pointer",
+                        borderRadius: "20px",
+                        "&:hover": {
+                          backgroundColor: "rgba(108, 92, 231, 0.1)",
+                        },
+                      }}
+                    >
+                      Login
+                    </Button>
+                  </Link>
+
+                  {/* Sign Up Button */}
+                  <Link href="/signup" passHref>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      sx={{
+                        ml: 1,
+                        textTransform: "none",
+                        cursor: "pointer",
+                        borderRadius: "20px",
+                        px: 3,
+                      }}
+                      data-testid={`${testId}-desktop-create-kudos`}
+                    >
+                      Sign Up
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </Box>
+          )}
+        </Toolbar>
+      </AppBar>
+    </>
   );
 };
 
