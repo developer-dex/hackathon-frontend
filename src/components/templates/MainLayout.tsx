@@ -1,41 +1,43 @@
-import React from "react";
-import Header from "@/components/organisms/Header";
+import React, { ReactNode } from "react";
+import { Box, Container } from "@mui/material";
+import Header from "../organisms/Header";
+import Footer from "../organisms/Footer";
+import { IUser } from "@/domain/models/auth";
 
-interface MainLayoutProps {
-  children: React.ReactNode;
-  title?: string;
+interface IMainLayoutProps {
+  children: ReactNode;
+  user: IUser | null;
+  onLogout: () => void;
 }
 
 /**
- * Main layout template with header and footer
+ * Main layout component that includes header and footer
  */
-export const MainLayout: React.FC<MainLayoutProps> = ({
+const MainLayout: React.FC<IMainLayoutProps> = ({
   children,
-  title = "Next.js App",
+  user,
+  onLogout,
 }) => {
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-  ];
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header title={title} links={navLinks} />
-
-      <main className="flex-grow">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">{children}</div>
-      </main>
-
-      <footer className="bg-white border-t border-gray-200">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <p className="text-center text-gray-500 text-sm">
-            &copy; {new Date().getFullYear()} Next.js Application. All rights
-            reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        minHeight: "100vh",
+      }}
+    >
+      <Header user={user} onLogout={onLogout} />
+      <Container
+        component="main"
+        sx={{
+          flex: 1,
+          py: 4,
+        }}
+      >
+        {children}
+      </Container>
+      <Footer />
+    </Box>
   );
 };
 

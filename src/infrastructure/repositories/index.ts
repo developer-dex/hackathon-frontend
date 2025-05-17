@@ -1,4 +1,19 @@
 /**
+ * This file re-exports all repository implementations and interfaces.
+ *
+ * This pattern:
+ * 1. Provides a cleaner import path for consumers
+ * 2. Maintains a single entry point to repository implementations
+ * 3. Allows for swapping or changing implementations without changing consuming code
+ */
+
+// Export interfaces
+export * from "./interfaces";
+
+// Export implementations
+export * from "./implementations";
+
+/**
  * Repository implementations go here.
  *
  * Example repository:
