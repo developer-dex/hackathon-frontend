@@ -75,10 +75,6 @@ export class AuthRepositoryImpl implements IAuthRepository {
         updatedAt: user.updatedAt,
       };
 
-      // Store auth data using LocalStorageService
-      LocalStorageService.setAuthToken(token);
-      LocalStorageService.setUser(mappedUser);
-
       return {
         user: mappedUser,
         token: token,

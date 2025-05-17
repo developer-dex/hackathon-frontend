@@ -1,5 +1,6 @@
 import { IAuthResponse, ISignupRequest } from "@/domain/models/auth";
 import { IAuthRepository } from "@/infrastructure/repositories/interfaces/repositories/auth.interface";
+import { LocalStorageService } from "@/infrastructure/storage/LocalStorageService";
 
 export class SignupUseCase {
   constructor(private authRepository: IAuthRepository) {}
@@ -13,6 +14,9 @@ export class SignupUseCase {
         console.error("Signup failed");
         return null;
       }
+      // Store auth data using LocalStorageService
+      LocalStorageService.setAuthToken(response.token);
+      LocalStorageService.setUser(response.user);
 
       // User and token are already stored in localStorage by the repository
       return response;
