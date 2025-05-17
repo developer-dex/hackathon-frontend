@@ -8,7 +8,6 @@ import {
   EVerificationStatus,
 } from "@/domain/models/auth";
 import { IAuthRepository } from "@/infrastructure/repositories/interfaces/repositories/auth.interface";
-import { LocalStorageService } from "@/infrastructure/storage/LocalStorageService";
 
 interface UserDTO {
   id: string;

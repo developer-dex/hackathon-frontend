@@ -49,7 +49,9 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
       }
     } else if (typeof kudos.category === "string") {
       // Handle case where category might be a string
-      const categoryName = kudos.category.toUpperCase().replace(/ /g, "_");
+      const categoryName = (kudos.category as string)
+        .toUpperCase()
+        .replace(/ /g, "_");
 
       if (CKudosCategoryThemes[categoryName]) {
         theme = CKudosCategoryThemes[categoryName];
@@ -99,10 +101,13 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
 
       <div className={styles.recipientInfo}>
         <div className={styles.avatarContainer}>
-          <img
-            src={kudos.recipientAvatarUrl}
-            alt={`${kudos.recipientName}'s avatar`}
+          <Image
+            src={kudos.recipientAvatarUrl || "/images/default-avatar.png"}
+            alt={`${kudos.recipientName || kudos.receiver.name}'s avatar`}
             className={styles.avatar}
+            width={40}
+            height={40}
+            unoptimized
           />
         </div>
         <div className={styles.nameAndTeam}>
@@ -133,10 +138,13 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
         <div className={styles.senderInfo}>
           {kudos.senderAvatarUrl && (
             <div className={styles.senderAvatar}>
-              <img
+              <Image
                 src={kudos.senderAvatarUrl}
                 alt={`${kudos.senderName}'s avatar`}
                 className={styles.avatar}
+                width={24}
+                height={24}
+                unoptimized
               />
             </div>
           )}

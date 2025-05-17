@@ -1,12 +1,5 @@
 import React, { ReactNode, useEffect, useState } from "react";
-import {
-  Container,
-  Box,
-  Paper,
-  Typography,
-  Button,
-  IconButton,
-} from "@mui/material";
+import { Container, Box, Paper, Typography, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import Link from "next/link";
 

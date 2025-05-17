@@ -78,7 +78,7 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
         setIsLoading(false);
       }
     }, 300),
-    [analyticsUseCase, onLogout, router]
+    [analyticsUseCase, onLogout, router, setIsLoading, setAnalyticsData]
   );
 
   useEffect(() => {

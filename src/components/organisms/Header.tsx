@@ -26,7 +26,6 @@ import styles from "@/styles/Header.module.css";
 interface IHeaderProps {
   user: IUser | null;
   onLogout: () => void;
-  isLoading?: boolean;
   "data-testid"?: string;
 }
 
@@ -44,7 +43,6 @@ const getUserInitials = (name: string): string => {
 const Header: React.FC<IHeaderProps> = ({
   user,
   onLogout,
-  isLoading,
   "data-testid": testId = "header",
 }) => {
   const theme = useTheme();
@@ -71,10 +69,6 @@ const Header: React.FC<IHeaderProps> = ({
 
   const handleMobileMenuClose = () => {
     setMobileMenuAnchorEl(null);
-  };
-
-  const navigateTo = (path: string) => {
-    router.push(path);
   };
 
   return (
