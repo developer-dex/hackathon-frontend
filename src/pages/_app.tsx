@@ -96,7 +96,7 @@ export default function App({ Component, pageProps }: AppProps) {
     <ThemeProvider theme={CTHEME}>
       <CssBaseline />
       <ToastContainer
-        position="top-right"
+        position="top-center"
         autoClose={3000}
         hideProgressBar={false}
         newestOnTop
