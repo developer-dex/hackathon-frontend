@@ -3,12 +3,8 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useRouter } from "next/router";
 import LoginPage from "../login";
 import { authRepository } from "@/infrastructure/repositories";
-import {
-  IAuthCredentials,
-  IUser,
-  IAuthResponse,
-  EUserRole,
-} from "@/domain/models/auth";
+import { AuthTestStubs } from "@/test-config/stubs/auth.stubs";
+import { IAuthResponse } from "@/domain/models/auth";
 import "@testing-library/jest-dom";
 
 // Mock next/router
@@ -47,12 +43,6 @@ describe("LoginPage Integration Tests", () => {
     push: jest.fn(),
   };
   const mockSetUser = jest.fn();
-  const mockUser: IUser = {
-    id: "1",
-    email: "test@example.com",
-    name: "Test User",
-    role: EUserRole.TEAM_MEMBER,
-  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -65,85 +55,61 @@ describe("LoginPage Integration Tests", () => {
 
   describe("Successful Login Flow", () => {
     it("should successfully login and redirect to home page", async () => {
-      // ===== ARRANGE =====
-      // Set up test data and mocks
-      const mockCredentials: IAuthCredentials = {
-        email: "test@example.com",
-        password: "password123",
-      };
-
-      const mockResponse: IAuthResponse = {
-        user: mockUser,
-        token: "mock-token",
-      };
-
       // Mock the repository's login method to return our test response
-      mockedAuthRepository.login.mockResolvedValueOnce(mockResponse);
+      mockedAuthRepository.login.mockResolvedValueOnce(
+        AuthTestStubs.successfulLoginResponse
+      );
 
-      // Render the login page component
       renderLoginPage();
 
-      // ===== ACT =====
-      // Simulate user interactions
-      // 1. Fill in the email field
+      // Fill in login form
       fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: mockCredentials.email },
+        target: { value: AuthTestStubs.validCredentials.email },
       });
-
-      // 2. Fill in the password field
       fireEvent.change(screen.getByLabelText(/password/i), {
-        target: { value: mockCredentials.password },
+        target: { value: AuthTestStubs.validCredentials.password },
       });
 
-      // 3. Submit the form
+      // Submit form
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
-      // ===== ASSERT =====
-      // 1. Verify Loading State
-      // Check that the submit button is disabled during the login process
+      // Verify Loading State
       const submitButton = screen
         .getAllByRole("button")
         .find(
           (btn) => btn.getAttribute("type") === "submit"
         ) as HTMLButtonElement;
       expect(submitButton).toBeDisabled();
-
-      // Verify that the loading spinner is shown
       expect(screen.getByRole("progressbar")).toBeInTheDocument();
 
-      // 2. Verify Repository Call
-      // Ensure the repository's login method was called with the correct credentials
+      // Verify Repository Call
       await waitFor(() => {
         expect(mockedAuthRepository.login).toHaveBeenCalledWith(
-          mockCredentials
+          AuthTestStubs.validCredentials
         );
       });
 
-      // 3. Verify Storage
-      // Check that the auth token was stored in localStorage
+      // Verify Storage
       await waitFor(() => {
         expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
           "auth_token",
-          "mock-token"
+          AuthTestStubs.successfulLoginResponse.token
         );
       });
 
-      // Check that the user data was stored in localStorage
       await waitFor(() => {
         expect(mockLocalStorage.setItem).toHaveBeenCalledWith(
           "user",
-          JSON.stringify(mockUser)
+          JSON.stringify(AuthTestStubs.mockUser)
         );
       });
 
-      // 4. Verify State Update
-      // Ensure the user state was updated with the correct user data
+      // Verify State Update
       await waitFor(() => {
-        expect(mockSetUser).toHaveBeenCalledWith(mockUser);
+        expect(mockSetUser).toHaveBeenCalledWith(AuthTestStubs.mockUser);
       });
 
-      // 5. Verify Navigation
-      // Check that the user was redirected to the home page
+      // Verify Navigation
       await waitFor(() => {
         expect(mockRouter.push).toHaveBeenCalledWith("/");
       });
@@ -152,36 +118,28 @@ describe("LoginPage Integration Tests", () => {
 
   describe("Error Handling", () => {
     it("should display error message on invalid credentials", async () => {
-      // Arrange
-      const mockCredentials: IAuthCredentials = {
-        email: "test@example.com",
-        password: "wrongpassword",
-      };
-
       // Mock the repository to throw an error for invalid credentials
       mockedAuthRepository.login.mockRejectedValueOnce(
-        new Error("Invalid email or password")
+        AuthTestStubs.invalidCredentialsError
       );
 
       renderLoginPage();
 
-      // Act
       // Fill in login form
       fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: mockCredentials.email },
+        target: { value: AuthTestStubs.invalidCredentials.email },
       });
       fireEvent.change(screen.getByLabelText(/password/i), {
-        target: { value: mockCredentials.password },
+        target: { value: AuthTestStubs.invalidCredentials.password },
       });
 
       // Submit form
       fireEvent.click(screen.getByRole("button", { name: /login/i }));
 
-      // Assert
       // Wait for error message
       await waitFor(() => {
         expect(
-          screen.getByText("Invalid email or password")
+          screen.getByText(AuthTestStubs.invalidCredentialsError.message)
         ).toBeInTheDocument();
       });
 
@@ -190,24 +148,19 @@ describe("LoginPage Integration Tests", () => {
     });
 
     it("should handle network errors gracefully", async () => {
-      const mockCredentials: IAuthCredentials = {
-        email: "test@example.com",
-        password: "password123",
-      };
-
-      // Mock the repository to throw an error
+      // Mock the repository to throw a network error
       mockedAuthRepository.login.mockRejectedValueOnce(
-        new Error("Network error")
+        AuthTestStubs.networkError
       );
 
       renderLoginPage();
 
       // Fill in login form
       fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: mockCredentials.email },
+        target: { value: AuthTestStubs.validCredentials.email },
       });
       fireEvent.change(screen.getByLabelText(/password/i), {
-        target: { value: mockCredentials.password },
+        target: { value: AuthTestStubs.validCredentials.password },
       });
 
       // Submit form
@@ -215,11 +168,13 @@ describe("LoginPage Integration Tests", () => {
 
       // Wait for error message
       await waitFor(() => {
-        expect(screen.getByText("Network error")).toBeInTheDocument();
+        expect(
+          screen.getByText(AuthTestStubs.networkError.message)
+        ).toBeInTheDocument();
       });
 
       // Verify no redirect occurred
-      // expect(mockRouter.push).not.toHaveBeenCalled();
+      expect(mockRouter.push).not.toHaveBeenCalled();
     });
   });
 
@@ -259,11 +214,6 @@ describe("LoginPage Integration Tests", () => {
 
   describe("Loading State", () => {
     it("should show loading state during login attempt", async () => {
-      const mockCredentials: IAuthCredentials = {
-        email: "test@example.com",
-        password: "password123",
-      };
-
       // Create a promise that we can resolve later
       let resolveLogin: (value: IAuthResponse) => void;
       const loginPromise = new Promise<IAuthResponse>((resolve) => {
@@ -276,10 +226,10 @@ describe("LoginPage Integration Tests", () => {
 
       // Fill in login form
       fireEvent.change(screen.getByLabelText(/email/i), {
-        target: { value: mockCredentials.email },
+        target: { value: AuthTestStubs.validCredentials.email },
       });
       fireEvent.change(screen.getByLabelText(/password/i), {
-        target: { value: mockCredentials.password },
+        target: { value: AuthTestStubs.validCredentials.password },
       });
 
       // Submit form
@@ -295,7 +245,7 @@ describe("LoginPage Integration Tests", () => {
       expect(screen.getByRole("progressbar")).toBeInTheDocument();
 
       // Resolve the login promise
-      resolveLogin!({ user: mockUser, token: "mock-token" });
+      resolveLogin!(AuthTestStubs.successfulLoginResponse);
 
       // Wait for loading state to clear
       await waitFor(() => {
