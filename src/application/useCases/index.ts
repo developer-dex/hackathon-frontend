@@ -11,14 +11,16 @@
  *   userRepository: UserRepository,
  *   name: string,
  *   email: string
- * ): Promise<User> => {
+ * ): Promise<User | { error: string }> {
  *   // Validate input
  *   if (!name || name.trim() === '') {
- *     throw new ValidationError('Name cannot be empty');
+ *     console.error('Name cannot be empty');
+ *     return { error: 'Name cannot be empty' };
  *   }
  *
  *   if (!email || !email.includes('@')) {
- *     throw new ValidationError('Email is invalid');
+ *     console.error('Email is invalid');
+ *     return { error: 'Email is invalid' };
  *   }
  *
  *   // Create user

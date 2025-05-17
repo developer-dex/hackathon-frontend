@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NextPage } from "next";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -16,6 +16,17 @@ const LoginPage: NextPage<ILoginPageProps> = ({ setUser }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [redirectPath, setRedirectPath] = useState<string>("/");
+
+  // Get redirect path from URL query parameter
+  useEffect(() => {
+    if (
+      router.query.redirectTo &&
+      typeof router.query.redirectTo === "string"
+    ) {
+      setRedirectPath(router.query.redirectTo);
+    }
+  }, [router.query]);
 
   const handleLogin = async (credentials: IAuthCredentials) => {
     setIsLoading(true);
@@ -32,6 +43,9 @@ const LoginPage: NextPage<ILoginPageProps> = ({ setUser }) => {
         toastSuccess(
           `Welcome, ${response.user.name || "User"}! Login successful.`
         );
+
+        // Redirect to the specified path or home page
+        router.push(redirectPath);
       } else {
         // Handle case where response exists but doesn't contain expected data
         console.error("Login response missing user data");
@@ -40,9 +54,6 @@ const LoginPage: NextPage<ILoginPageProps> = ({ setUser }) => {
         // Set a generic error message
         setError("Unable to complete login. Please try again.");
       }
-
-      // Always redirect to home page after attempt, successful or not
-      router.push("/");
     } catch (error) {
       // Log the error but don't throw it
       console.error("Login error:", error);
@@ -56,11 +67,6 @@ const LoginPage: NextPage<ILoginPageProps> = ({ setUser }) => {
       } else {
         setError("Invalid email or password. Please try again.");
       }
-
-      // Redirect to home page after a short delay
-      setTimeout(() => {
-        router.push("/");
-      }, 1500);
     } finally {
       setIsLoading(false);
     }

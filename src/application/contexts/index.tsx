@@ -34,7 +34,13 @@
  * export const useUsers = () => {
  *   const context = useContext(UserContext);
  *   if (context === undefined) {
- *     throw new Error('useUsers must be used within a UserProvider');
+ *     console.error('useUsers must be used within a UserProvider');
+ *     return {
+ *       users: [],
+ *       isLoading: false,
+ *       error: null,
+ *       fetchUsers: async () => {}
+ *     };
  *   }
  *   return context;
  * };

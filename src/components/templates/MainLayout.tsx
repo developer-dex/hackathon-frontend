@@ -32,6 +32,7 @@ const MainLayout: React.FC<IMainLayoutProps> = ({
         sx={{
           flex: 1,
           py: 4,
+          mt: { xs: "56px", sm: "64px" },
         }}
       >
         {children}

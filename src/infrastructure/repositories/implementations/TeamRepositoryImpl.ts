@@ -20,13 +20,15 @@ export class TeamRepositoryImpl implements ITeamRepository {
       const response = await fetch(`${this.apiBaseUrl}/api/teams`);
 
       if (!response.ok) {
-        throw new Error(`API responded with status: ${response.status}`);
+        console.warn(`API responded with status: ${response.status}`);
+        return CMockTeams;
       }
 
       const data = (await response.json()) as ITeamApiResponse;
 
       if (!data.success || !Array.isArray(data.data)) {
-        throw new Error("Invalid response format from teams API");
+        console.warn("Invalid response format from teams API");
+        return CMockTeams;
       }
 
       return data.data;

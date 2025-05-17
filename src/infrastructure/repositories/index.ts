@@ -42,7 +42,8 @@ export * from "./implementations/TeamRepositoryImpl";
  *       if (error.response?.status === 404) {
  *         return null;
  *       }
- *       throw error;
+ *       console.error('Error fetching user by ID:', error);
+ *       return null;
  *     }
  *   }
  *
