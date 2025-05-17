@@ -8,19 +8,9 @@ export class LoginUseCase {
   async execute(credentials: IAuthCredentials): Promise<IAuthResponse> {
     try {
       const response = await this.authRepository.login(credentials);
-      // If login failed, return default error response
+      // If login failed, throw an error
       if (!response) {
-        console.error("Authentication failed");
-        return {
-          user: {
-            id: "",
-            email: "",
-            name: "",
-            role: "",
-          },
-          token: "",
-          message: "Authentication failed",
-        };
+        throw new Error("Authentication failed");
       }
 
       // Store auth data using LocalStorageService
@@ -29,18 +19,8 @@ export class LoginUseCase {
 
       return response;
     } catch (error) {
-      // Log the error but return default response instead of propagating
-      console.error("Login use case error:", error);
-      return {
-        user: {
-          id: "",
-          email: "",
-          name: "",
-          role: "",
-        },
-        token: "",
-        message: "Login failed",
-      };
+      // Propagate the error instead of returning a default response
+      throw error;
     }
   }
 }

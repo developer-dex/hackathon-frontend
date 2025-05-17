@@ -154,9 +154,9 @@ describe("LoginPage Integration Tests", () => {
 
       // Wait for error message
       await waitFor(() => {
-        expect(
-          screen.getByText(AuthTestStubs.invalidCredentialsError.message)
-        ).toBeInTheDocument();
+        expect(screen.getByTestId("login-form-error")).toHaveTextContent(
+          AuthTestStubs.invalidCredentialsError.message
+        );
       });
 
       // Verify no redirect occurred
@@ -184,9 +184,9 @@ describe("LoginPage Integration Tests", () => {
 
       // Wait for error message
       await waitFor(() => {
-        expect(
-          screen.getByText(AuthTestStubs.networkError.message)
-        ).toBeInTheDocument();
+        expect(screen.getByTestId("login-form-error")).toHaveTextContent(
+          AuthTestStubs.networkError.message
+        );
       });
 
       // Verify no redirect occurred

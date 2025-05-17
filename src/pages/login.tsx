@@ -37,6 +37,13 @@ const LoginPage: NextPage<ILoginPageProps> = ({ setUser }) => {
 
       // Check if response and user are valid
       if (response && response.user) {
+        // Store auth token first
+        localStorage.setItem("auth_token", response.token);
+
+        // Store user data
+        localStorage.setItem("user", JSON.stringify(response.user));
+
+        // Update user state
         setUser(response.user);
 
         // Show success toast notification
