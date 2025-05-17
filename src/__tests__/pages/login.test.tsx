@@ -1,11 +1,26 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useRouter } from "next/router";
-import LoginPage from "../login";
+import LoginPage from "@/pages/login";
 import { authRepository } from "@/infrastructure/repositories";
 import { AuthTestStubs } from "@/test-config/stubs/auth.stubs";
 import { IAuthResponse } from "@/domain/models/auth";
 import "@testing-library/jest-dom";
+
+// Mock window.matchMedia
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: jest.fn().mockImplementation((query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+});
 
 // Mock next/router
 jest.mock("next/router", () => ({
@@ -41,6 +56,7 @@ Object.defineProperty(window, "localStorage", { value: mockLocalStorage });
 describe("LoginPage Integration Tests", () => {
   const mockRouter = {
     push: jest.fn(),
+    query: {},
   };
   const mockSetUser = jest.fn();
 
