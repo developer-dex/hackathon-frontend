@@ -103,7 +103,7 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
         <div className={styles.avatarContainer}>
           <Image
             src={kudos.recipientAvatarUrl || "/images/default-avatar.png"}
-            alt={`${kudos.recipientName || kudos.receiver.name}'s avatar`}
+            alt={`${kudos.recipientName}'s avatar`}
             className={styles.avatar}
             width={40}
             height={40}
@@ -142,8 +142,8 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
                 src={kudos.senderAvatarUrl}
                 alt={`${kudos.senderName}'s avatar`}
                 className={styles.avatar}
-                width={24}
-                height={24}
+                width={40}
+                height={40}
                 unoptimized
               />
             </div>

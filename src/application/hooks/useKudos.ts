@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { IKudos } from "@/domain/entities/Kudos.types";
-import { kudosUseCases } from "@/application/useCases/kudos";
+import { kudosUseCases } from "@/application/useCases/kudos/index";
 
 interface IUseKudosReturn {
   kudosList: IKudos[];

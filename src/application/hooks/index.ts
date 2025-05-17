@@ -39,3 +39,9 @@ export * from "./useTeams";
 
 // Kudos hooks
 export * from "./useKudos";
+
+// User hooks
+export * from "./useUsers";
+
+// Category hooks
+export * from "./useCategories";

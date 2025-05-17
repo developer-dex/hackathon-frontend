@@ -1,0 +1,56 @@
+import axios, { AxiosInstance } from "axios";
+
+/**
+ * Creates a configured Axios instance for making API requests
+ */
+const createHttpClient = (): AxiosInstance => {
+  const axiosInstance = axios.create({
+    baseURL: process.env.NEXT_PUBLIC_API_URL || "",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  // Request interceptor to handle auth
+  axiosInstance.interceptors.request.use(
+    (config) => {
+      // Get token from localStorage
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      // Add auth header if token exists
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
+  // Response interceptor for error handling
+  axiosInstance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response) {
+        // Handle unauthorized responses
+        if (error.response.status === 401) {
+          if (typeof window !== "undefined") {
+            // Clear auth data and redirect to login
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            window.location.href = "/login";
+          }
+        }
+      }
+      return Promise.reject(error);
+    }
+  );
+
+  return axiosInstance;
+};
+
+// Export the client instance
+export const httpClient = createHttpClient();

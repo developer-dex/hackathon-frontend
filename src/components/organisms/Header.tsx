@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import Image from "next/image";
-import { IUser, EUserRole } from "@/domain/models/auth";
+import { IUser } from "@/domain/models/auth";
 import { useRouter } from "next/router";
 
 interface IHeaderProps {
@@ -205,9 +205,9 @@ const Header: React.FC<IHeaderProps> = ({
                       </Typography>
                     </Link>
                   </MenuItem>
-                  {user && user.role === EUserRole.TEAM_LEAD && (
+                  {user && user.role === "Team Lead" && (
                     <MenuItem onClick={handleMobileMenuClose}>
-                      <Link href="/kudos/new" passHref>
+                      <Link href="/create-kudos" passHref>
                         <Typography sx={{ width: "100%", cursor: "pointer" }}>
                           Create Kudos
                         </Typography>
@@ -282,6 +282,23 @@ const Header: React.FC<IHeaderProps> = ({
                 </Button>
               </Link>
 
+              {/* Team Lead Create Kudos Button */}
+              {user && user.role === "Team Lead" && (
+                <Link href="/create-kudos" passHref>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    sx={{
+                      ml: 2,
+                      textTransform: "none",
+                      borderRadius: "20px",
+                    }}
+                  >
+                    Create Kudos
+                  </Button>
+                </Link>
+              )}
+
               {/* Authentication Section */}
               {user ? (
                 <>
@@ -331,9 +348,9 @@ const Header: React.FC<IHeaderProps> = ({
                           </Typography>
                         </Link>
                       </MenuItem>
-                      {user && user.role === EUserRole.TEAM_LEAD && (
+                      {user && user.role === "Team Lead" && (
                         <MenuItem onClick={handleClose}>
-                          <Link href="/kudos/new" passHref>
+                          <Link href="/create-kudos" passHref>
                             <Typography sx={{ color: "inherit" }}>
                               Create Kudos
                             </Typography>

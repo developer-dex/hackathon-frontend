@@ -41,16 +41,6 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
     []
   );
 
-  // Memoize time period options to prevent recreation on each render
-  const timePeriodOptions = useMemo(
-    () => [
-      { value: "weekly", label: "Weekly" },
-      { value: "monthly", label: "Monthly" },
-      { value: "yearly", label: "Yearly" },
-    ],
-    []
-  );
-
   // Memoize the fetch function
   const fetchData = useCallback(
     async (period: TimePeriod) => {

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NextPage } from "next";
 import Head from "next/head";
 import {
@@ -8,12 +8,15 @@ import {
   Paper,
   Grid,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { IUser } from "@/domain/models/auth";
 import MainLayout from "@/components/templates/MainLayout";
 import Link from "next/link";
 import { KudosWall } from "../components/organisms/KudosWall";
 import { useKudos } from "@/application/hooks/useKudos";
+import { useRouter } from "next/router";
 
 interface HomePageProps {
   user: IUser | null;
@@ -21,6 +24,20 @@ interface HomePageProps {
 }
 
 const HomePage: NextPage<HomePageProps> = ({ user, onLogout }) => {
+  const router = useRouter();
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+
+  // Check for kudos created success parameter in URL
+  useEffect(() => {
+    if (router.query.kudosCreated === "success") {
+      setShowSuccessAlert(true);
+
+      // Remove the query parameter to avoid showing the alert on refresh
+      const { pathname } = router;
+      router.replace(pathname, undefined, { shallow: true });
+    }
+  }, [router]);
+
   return (
     <>
       <Head>
@@ -30,6 +47,22 @@ const HomePage: NextPage<HomePageProps> = ({ user, onLogout }) => {
           content="A platform to recognize and appreciate your team members' contributions and achievements."
         />
       </Head>
+
+      {/* Success notification */}
+      <Snackbar
+        open={showSuccessAlert}
+        autoHideDuration={4000}
+        onClose={() => setShowSuccessAlert(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setShowSuccessAlert(false)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
+          Kudos created successfully!
+        </Alert>
+      </Snackbar>
 
       <MainLayout user={user} onLogout={onLogout}>
         {user ? <AuthenticatedContent user={user} /> : <WelcomeContent />}
