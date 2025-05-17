@@ -23,8 +23,14 @@ src/
 
 ### 1. Entity Design
 
+- **Implementation Approach**
+  - Entities MUST be implemented as classes (preferred) or interfaces
+  - When using interfaces, provide accompanying factory functions
+  - Class-based entities MUST implement business methods that operate on their state
+  - Class properties should use private/protected modifiers appropriately
+
 - **Purity and Independence**
-  - Entities MUST be pure TypeScript/JavaScript objects or classes
+  - Entities MUST be pure TypeScript/JavaScript classes
   - Entities MUST NOT import from Application, UI, or Infrastructure layers
   - Entities MUST NOT have dependencies on frameworks or libraries
   - Entities MUST be framework-agnostic and reusable
@@ -36,18 +42,24 @@ src/
   - Optional properties MUST be marked as optional in interfaces
 
 - **Immutability**
-  - Entities SHOULD be immutable where possible
-  - For mutable entities, state changes SHOULD happen through explicit methods
+  - Entity classes SHOULD use readonly properties where possible
+  - For mutable properties, state changes SHOULD happen through explicit methods
   - Avoid direct property modifications without validation
-  - Consider using a builder pattern for complex entity creation
+  - Consider implementing a builder pattern for complex entity creation
 
 - **Business Logic Encapsulation**
-  - Entities SHOULD encapsulate their validation logic
-  - Business rules related to a single entity SHOULD be in that entity
-  - Domain behaviors SHOULD be modeled as methods on entities
+  - Entities MUST encapsulate their validation logic
+  - Business rules related to a single entity SHOULD be in that entity class
+  - Domain behaviors MUST be modeled as methods on entity classes
   - Security-critical validation MUST be performed in the domain layer
 
 ### 2. Value Object Design
+
+- **Class-Based Implementation**
+  - Value objects MUST be implemented as classes
+  - Value object classes MUST use private readonly properties
+  - Value object constructors MUST validate input
+  - Value objects MUST implement equality methods
 
 - **Immutability**
   - Value objects MUST be immutable
@@ -89,7 +101,7 @@ src/
 
 ### 4. Error Design
 
-- **Error Hierarchy**
+- **Class Hierarchy**
   - Create a DomainError base class for all domain errors
   - Extend DomainError for specific error types
   - Group related errors in appropriate modules
@@ -109,9 +121,15 @@ src/
 
 ### 5. Validators Design
 
+- **Class-Based Implementation**
+  - Validators SHOULD be implemented as static classes
+  - Validator methods SHOULD be static methods in the class
+  - Private helper methods can be used to break down complex validation
+  - Consider implementing a Validator interface for consistency
+
 - **Separation of Concerns**
-  - Create validator classes/functions for complex validation logic
-  - One validator per entity or value object type
+  - Create validator classes for complex validation logic
+  - One validator class per entity or value object type
   - Validators SHOULD focus on business rules, not technical validation
   - Reuse validators when common validation is needed
 
@@ -123,7 +141,134 @@ src/
 
 ## Implementation Examples
 
-### Entity Example
+### Entity Example (Class-Based - Preferred)
+
+```tsx
+// Task.ts (Class-based approach)
+import { InvalidTaskError } from '../errors/TaskErrors';
+import { Priority } from '../valueObjects/Priority';
+import { TaskId } from '../valueObjects/TaskId';
+
+export class Task {
+  private readonly _id: TaskId;
+  private readonly _title: string;
+  private readonly _description?: string;
+  private readonly _completed: boolean;
+  private readonly _priority: Priority;
+  private readonly _createdAt: Date;
+  private readonly _dueDate?: Date | null;
+  private readonly _tags: string[];
+  
+  constructor(params: {
+    id: string | TaskId;
+    title: string;
+    description?: string;
+    completed?: boolean;
+    priority?: string | Priority;
+    createdAt?: string | Date;
+    dueDate?: string | Date | null;
+    tags?: string[];
+  }) {
+    // Validation
+    if (!params.title || params.title.trim().length === 0) {
+      throw new InvalidTaskError('Task title cannot be empty');
+    }
+    
+    // Initialize properties
+    this._id = params.id instanceof TaskId ? params.id : new TaskId(params.id);
+    this._title = params.title;
+    this._description = params.description;
+    this._completed = params.completed ?? false;
+    
+    // Handle Priority as either string or Priority value object
+    if (typeof params.priority === 'string') {
+      this._priority = Priority.fromString(params.priority);
+    } else {
+      this._priority = params.priority ?? Priority.MEDIUM;
+    }
+    
+    // Handle dates
+    if (typeof params.createdAt === 'string') {
+      this._createdAt = new Date(params.createdAt);
+    } else {
+      this._createdAt = params.createdAt ?? new Date();
+    }
+    
+    if (params.dueDate === null) {
+      this._dueDate = null;
+    } else if (typeof params.dueDate === 'string') {
+      this._dueDate = new Date(params.dueDate);
+    } else {
+      this._dueDate = params.dueDate;
+    }
+    
+    this._tags = params.tags ?? [];
+  }
+  
+  // Getters
+  get id(): string { return this._id.toString(); }
+  get idObject(): TaskId { return this._id; }
+  get title(): string { return this._title; }
+  get description(): string | undefined { return this._description; }
+  get completed(): boolean { return this._completed; }
+  get priority(): Priority { return this._priority; }
+  get createdAt(): Date { return this._createdAt; }
+  get dueDate(): Date | null | undefined { return this._dueDate; }
+  get tags(): string[] { return [...this._tags]; }
+  
+  // Business methods
+  complete(): Task {
+    return new Task({
+      ...this.toObject(),
+      completed: true
+    });
+  }
+  
+  changePriority(priority: Priority | string): Task {
+    return new Task({
+      ...this.toObject(),
+      priority
+    });
+  }
+  
+  isOverdue(): boolean {
+    if (!this._dueDate) return false;
+    return this._dueDate < new Date();
+  }
+  
+  addTag(tag: string): Task {
+    if (this._tags.includes(tag)) return this; // Already has tag
+    
+    return new Task({
+      ...this.toObject(),
+      tags: [...this._tags, tag]
+    });
+  }
+  
+  removeTag(tag: string): Task {
+    return new Task({
+      ...this.toObject(),
+      tags: this._tags.filter(t => t !== tag)
+    });
+  }
+  
+  // Helper method to convert to plain object
+  toObject(): Record<string, any> {
+    return {
+      id: this._id.toString(),
+      title: this._title,
+      description: this._description,
+      completed: this._completed,
+      priority: this._priority,
+      createdAt: this._createdAt,
+      dueDate: this._dueDate,
+      tags: [...this._tags]
+    };
+  }
+}
+```
+
+### Entity Example (Interface Approach - Alternative)
 
 ```tsx
 // Task.ts (Interface approach)
@@ -138,18 +283,12 @@ export interface Task {
   tags: string[];
 }
 
-// Task.ts (Class approach - alternative)
-export class Task {
-  readonly id: string;
-  readonly title: string;
-  readonly description?: string;
-  readonly completed: boolean;
-  readonly priority: 'high' | 'medium' | 'low';
-  readonly createdAt: string;
-  readonly dueDate?: string | null;
-  readonly tags: string[];
-  
-  constructor(params: {
+// TaskFactory.ts
+import { Task } from './Task';
+import { InvalidTaskError } from '../errors/TaskErrors';
+
+export class TaskFactory {
+  static create(params: {
     id: string;
     title: string;
     description?: string;
@@ -158,39 +297,41 @@ export class Task {
     createdAt?: string;
     dueDate?: string | null;
     tags?: string[];
-  }) {
-    // Validation could happen here
+  }): Task {
+    // Validation
     if (!params.title || params.title.trim().length === 0) {
       throw new InvalidTaskError('Task title cannot be empty');
     }
     
-    this.id = params.id;
-    this.title = params.title;
-    this.description = params.description;
-    this.completed = params.completed ?? false;
-    this.priority = params.priority ?? 'medium';
-    this.createdAt = params.createdAt ?? new Date().toISOString();
-    this.dueDate = params.dueDate ?? null;
-    this.tags = params.tags ?? [];
+    return {
+      id: params.id,
+      title: params.title,
+      description: params.description,
+      completed: params.completed ?? false,
+      priority: params.priority ?? 'medium',
+      createdAt: params.createdAt ?? new Date().toISOString(),
+      dueDate: params.dueDate ?? null,
+      tags: params.tags ?? []
+    };
   }
   
-  complete(): Task {
-    return new Task({
-      ...this,
+  static complete(task: Task): Task {
+    return {
+      ...task,
       completed: true
-    });
+    };
   }
   
-  changePriority(priority: 'high' | 'medium' | 'low'): Task {
-    return new Task({
-      ...this,
+  static changePriority(task: Task, priority: 'high' | 'medium' | 'low'): Task {
+    return {
+      ...task,
       priority
-    });
+    };
   }
   
-  isOverdue(): boolean {
-    if (!this.dueDate) return false;
-    return new Date(this.dueDate) < new Date();
+  static isOverdue(task: Task): boolean {
+    if (!task.dueDate) return false;
+    return new Date(task.dueDate) < new Date();
   }
 }
 ```
@@ -199,8 +340,10 @@ export class Task {
 
 ```tsx
 // Email.ts
+import { InvalidEmailError } from '../errors/ValidationErrors';
+
 export class Email {
-  private readonly value: string;
+  private readonly _value: string;
   
   private static readonly EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   
@@ -209,23 +352,27 @@ export class Email {
       throw new InvalidEmailError(`Invalid email format: ${email}`);
     }
     
-    this.value = email.toLowerCase();
+    this._value = email.toLowerCase();
   }
   
   equals(other: Email): boolean {
-    return this.value === other.value;
+    return this._value === other._value;
   }
   
   toString(): string {
-    return this.value;
+    return this._value;
+  }
+  
+  get value(): string {
+    return this._value;
   }
   
   get domain(): string {
-    return this.value.split('@')[1];
+    return this._value.split('@')[1];
   }
   
   get localPart(): string {
-    return this.value.split('@')[0];
+    return this._value.split('@')[0];
   }
   
   static isValid(email: string): boolean {
@@ -243,8 +390,8 @@ import { Task } from '../entities/Task';
 export interface TaskSearchCriteria {
   completed?: boolean;
   priority?: 'high' | 'medium' | 'low';
-  dueBefore?: string;
-  dueAfter?: string;
+  dueBefore?: Date | string;
+  dueAfter?: Date | string;
   tags?: string[];
 }
 
@@ -305,7 +452,7 @@ export interface TaskValidationData {
   title?: string;
   description?: string;
   priority?: string;
-  dueDate?: string;
+  dueDate?: string | Date;
 }
 
 export class TaskValidator {
@@ -326,7 +473,9 @@ export class TaskValidator {
     
     // Due date validation
     if (data.dueDate) {
-      const dueDate = new Date(data.dueDate);
+      const dueDate = data.dueDate instanceof Date ? 
+        data.dueDate : new Date(data.dueDate);
+      
       if (isNaN(dueDate.getTime())) {
         errors.push('Invalid due date format');
       } else if (dueDate < new Date()) {
@@ -417,45 +566,53 @@ export class TaskValidator {
 
 ## Correct Patterns
 
-1. ✅ **Rich Domain Model with Behavior**
+1. ✅ **Rich Domain Model with Class-Based Behavior**
    ```tsx
    // CORRECT
    export class Task {
      constructor(
-       readonly id: string,
-       readonly title: string,
-       readonly completed: boolean = false,
-       readonly priority: 'high' | 'medium' | 'low' = 'medium',
-       readonly dueDate?: string
+       private readonly _id: string,
+       private readonly _title: string,
+       private readonly _completed: boolean = false,
+       private readonly _priority: Priority = Priority.MEDIUM,
+       private readonly _dueDate?: Date | null
      ) {
-       if (!title.trim()) {
+       if (!_title.trim()) {
          throw new InvalidTaskError('Task title cannot be empty');
        }
      }
      
+     // Getters
+     get id(): string { return this._id; }
+     get title(): string { return this._title; }
+     get completed(): boolean { return this._completed; }
+     get priority(): Priority { return this._priority; }
+     get dueDate(): Date | null | undefined { return this._dueDate; }
+     
+     // Business methods
      complete(): Task {
        return new Task(
-         this.id,
-         this.title,
+         this._id,
+         this._title,
          true,
-         this.priority,
-         this.dueDate
+         this._priority,
+         this._dueDate
        );
      }
      
-     changePriority(priority: 'high' | 'medium' | 'low'): Task {
+     changePriority(priority: Priority): Task {
        return new Task(
-         this.id,
-         this.title,
-         this.completed,
+         this._id,
+         this._title,
+         this._completed,
          priority,
-         this.dueDate
+         this._dueDate
        );
      }
      
      isOverdue(): boolean {
-       if (!this.dueDate) return false;
-       return new Date(this.dueDate) < new Date();
+       if (!this._dueDate) return false;
+       return this._dueDate < new Date();
      }
    }
    ```
@@ -466,9 +623,9 @@ export class TaskValidator {
    export class Priority {
      private constructor(readonly value: 'high' | 'medium' | 'low') {}
      
-     static HIGH = new Priority('high');
-     static MEDIUM = new Priority('medium');
-     static LOW = new Priority('low');
+     static readonly HIGH = new Priority('high');
+     static readonly MEDIUM = new Priority('medium');
+     static readonly LOW = new Priority('low');
      
      static fromString(value: string): Priority {
        switch (value.toLowerCase()) {
@@ -502,13 +659,5 @@ export class TaskValidator {
      findAll(filters?: TaskFilters): Promise<Task[]>;
      save(task: Task): Promise<Task>;
      remove(taskId: string): Promise<void>;
-   }
-   
-   export interface TaskFilters {
-     completed?: boolean;
-     priority?: Priority;
-     dueBefore?: Date;
-     dueAfter?: Date;
-     limit?: number;
    }
    ```
