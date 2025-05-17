@@ -1,0 +1,121 @@
+.kudosCard {
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  height: 100%;
+}
+
+.kudosCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.categoryIcon {
+  font-size: 20px;
+  margin-right: 6px;
+}
+
+.categoryName {
+  font-weight: 600;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.menuButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #777;
+  font-size: 20px;
+}
+
+.recipientInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.avatarContainer {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nameAndTeam {
+  display: flex;
+  flex-direction: column;
+}
+
+.recipientName {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.recipientTeam {
+  font-size: 14px;
+  color: #666;
+}
+
+.message {
+  line-height: 1.5;
+  margin-bottom: 16px;
+  flex-grow: 1;
+}
+
+.illustration {
+  font-size: 48px;
+  text-align: center;
+  margin: 10px 0;
+  opacity: 0.7;
+}
+
+.sender {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 12px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #666;
+}
+
+.senderInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.senderAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.senderName {
+  font-weight: 500;
+}
+
+.date {
+  margin-left: auto;
+}

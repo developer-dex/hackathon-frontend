@@ -1,5 +1,14 @@
 import React, { ReactNode, useEffect, useState } from "react";
-import { Container, Box, Paper, Typography } from "@mui/material";
+import {
+  Container,
+  Box,
+  Paper,
+  Typography,
+  Button,
+  IconButton,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import Link from "next/link";
 
 interface IAuthLayoutProps {
   children: ReactNode;
@@ -36,14 +45,42 @@ const AuthLayout: React.FC<IAuthLayoutProps> = ({ children, title }) => {
             p: 4,
             width: "100%",
             borderRadius: 2,
+            position: "relative",
           }}
         >
+          {/* Close button positioned at the top right of the modal */}
+          <Box
+            sx={{
+              position: "absolute",
+              top: "10px",
+              right: "10px",
+              zIndex: 1,
+            }}
+          >
+            <Link href="/" passHref>
+              <IconButton
+                color="primary"
+                aria-label="back to home"
+                size="medium"
+                sx={{
+                  backgroundColor: "rgba(108, 92, 231, 0.1)",
+                  "&:hover": {
+                    backgroundColor: "rgba(108, 92, 231, 0.2)",
+                  },
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </Link>
+          </Box>
+
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               mb: 4,
+              mt: 2,
             }}
           >
             <Typography

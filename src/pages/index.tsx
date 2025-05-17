@@ -2,9 +2,11 @@ import React from "react";
 import { NextPage } from "next";
 import Head from "next/head";
 import { Box, Typography, Button, Paper, Grid } from "@mui/material";
-import { IUser, EUserRole } from "@/domain/models/auth";
+import { IUser } from "@/domain/models/auth";
 import MainLayout from "@/components/templates/MainLayout";
 import Link from "next/link";
+import { KudosWall } from "../components/organisms/KudosWall";
+import { CKudosMockData } from "../domain/mock/kudosData";
 
 interface HomePageProps {
   user: IUser | null;
@@ -36,74 +38,16 @@ interface AuthenticatedContentProps {
 const AuthenticatedContent: React.FC<AuthenticatedContentProps> = ({
   user,
 }) => {
-  const isTechLead = user.role === EUserRole.TECH_LEAD;
-
   return (
     <Box>
       <Typography variant="h4" component="h1" gutterBottom>
         Welcome back, {user.name}!
       </Typography>
 
-      <Grid container spacing={3} sx={{ mt: 2 }}>
-        <Grid
-          sx={{
-            gridColumn: {
-              xs: "span 12",
-              md: isTechLead ? "span 6" : "span 12",
-            },
-          }}
-        >
-          <Paper sx={{ p: 3, height: "100%" }}>
-            <Typography variant="h6" gutterBottom>
-              View Kudos
-            </Typography>
-            <Typography variant="body1" paragraph>
-              Browse and filter kudos given to team members across the
-              organization.
-            </Typography>
-            <Link href="/kudos" passHref>
-              <Button variant="contained" color="primary">
-                View Kudos Wall
-              </Button>
-            </Link>
-          </Paper>
-        </Grid>
-
-        {isTechLead && (
-          <Grid sx={{ gridColumn: { xs: "span 12", md: "span 6" } }}>
-            <Paper sx={{ p: 3, height: "100%", backgroundColor: "#f0f8ff" }}>
-              <Typography variant="h6" gutterBottom>
-                Give Kudos
-              </Typography>
-              <Typography variant="body1" paragraph>
-                Recognize someone&apos;s hard work and achievements by giving
-                them kudos.
-              </Typography>
-              <Link href="/kudos/new" passHref>
-                <Button variant="contained" color="secondary">
-                  Create New Kudos
-                </Button>
-              </Link>
-            </Paper>
-          </Grid>
-        )}
-
-        <Grid sx={{ gridColumn: "span 12" }}>
-          <Paper sx={{ p: 3, mt: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Analytics Dashboard
-            </Typography>
-            <Typography variant="body1" paragraph>
-              View insights about kudos activity across the organization.
-            </Typography>
-            <Link href="/analytics" passHref>
-              <Button variant="outlined" color="primary">
-                View Analytics
-              </Button>
-            </Link>
-          </Paper>
-        </Grid>
-      </Grid>
+      {/* Kudos Wall displayed directly on the homepage */}
+      <Box sx={{ mt: 4 }}>
+        <KudosWall kudosList={CKudosMockData} title="Recognition Wall" />
+      </Box>
     </Box>
   );
 };
@@ -155,7 +99,7 @@ const WelcomeContent: React.FC = () => {
         </Typography>
 
         <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mb: 6 }}>
-          <Link href="/login" passHref>
+          <Link href="/dashboard" passHref>
             <Button
               variant="contained"
               color="primary"

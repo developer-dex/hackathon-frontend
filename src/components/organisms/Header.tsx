@@ -17,6 +17,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import Link from "next/link";
 import Image from "next/image";
 import { IUser, EUserRole } from "@/domain/models/auth";
+import { useRouter } from "next/router";
 
 interface IHeaderProps {
   user: IUser | null;
@@ -30,10 +31,14 @@ const Header: React.FC<IHeaderProps> = ({
   "data-testid": testId = "header",
 }) => {
   const theme = useTheme();
+  const router = useRouter();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [mobileMenuAnchorEl, setMobileMenuAnchorEl] =
     useState<null | HTMLElement>(null);
+
+  const isHomePage = router.pathname === "/";
+  const isDashboardPage = router.pathname === "/dashboard";
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -135,15 +140,36 @@ const Header: React.FC<IHeaderProps> = ({
                 ) : (
                   <>
                     <MenuItem onClick={handleMobileMenuClose}>
-                      <Link href="/kudos" passHref>
-                        <Typography sx={{ width: "100%", cursor: "pointer" }}>
-                          All Kudos
+                      <Link href="/" passHref>
+                        <Typography
+                          sx={{
+                            width: "100%",
+                            cursor: "pointer",
+                            color: isHomePage ? "primary.main" : "inherit",
+                            fontWeight: isHomePage ? "bold" : "normal",
+                          }}
+                        >
+                          Kudos Wall
+                        </Typography>
+                      </Link>
+                    </MenuItem>
+                    <MenuItem onClick={handleMobileMenuClose}>
+                      <Link href="/dashboard" passHref>
+                        <Typography
+                          sx={{
+                            width: "100%",
+                            cursor: "pointer",
+                            color: isDashboardPage ? "primary.main" : "inherit",
+                            fontWeight: isDashboardPage ? "bold" : "normal",
+                          }}
+                        >
+                          Analytics Dashboard
                         </Typography>
                       </Link>
                     </MenuItem>
                     {user.role === EUserRole.TECH_LEAD && (
                       <MenuItem onClick={handleMobileMenuClose}>
-                        <Link href="/create-kudos" passHref>
+                        <Link href="/kudos/new" passHref>
                           <Typography sx={{ width: "100%", cursor: "pointer" }}>
                             Create Kudos
                           </Typography>
@@ -172,20 +198,50 @@ const Header: React.FC<IHeaderProps> = ({
           ) : (
             <Box sx={{ display: "flex", alignItems: "center" }}>
               {/* Navigation links */}
-              <Link href="/kudos" passHref>
+              <Link href="/" passHref>
                 <Button
                   color="inherit"
                   sx={{
                     mx: 1,
                     textTransform: "none",
                     cursor: "pointer",
-                    color: "text.primary",
+                    color: isHomePage ? "primary.main" : "text.primary",
+                    fontWeight: isHomePage ? "bold" : "normal",
+                    borderBottom: isHomePage ? "2px solid" : "none",
+                    borderColor: isHomePage ? "primary.main" : "transparent",
+                    borderRadius: 0,
+                    paddingBottom: "4px",
                     "&:hover": {
+                      backgroundColor: "transparent",
                       color: "primary.main",
                     },
                   }}
                 >
-                  All Kudos
+                  Kudos Wall
+                </Button>
+              </Link>
+              <Link href="/dashboard" passHref>
+                <Button
+                  color="inherit"
+                  sx={{
+                    mx: 1,
+                    textTransform: "none",
+                    cursor: "pointer",
+                    color: isDashboardPage ? "primary.main" : "text.primary",
+                    fontWeight: isDashboardPage ? "bold" : "normal",
+                    borderBottom: isDashboardPage ? "2px solid" : "none",
+                    borderColor: isDashboardPage
+                      ? "primary.main"
+                      : "transparent",
+                    borderRadius: 0,
+                    paddingBottom: "4px",
+                    "&:hover": {
+                      backgroundColor: "transparent",
+                      color: "primary.main",
+                    },
+                  }}
+                >
+                  Analytics Dashboard
                 </Button>
               </Link>
 
@@ -194,7 +250,7 @@ const Header: React.FC<IHeaderProps> = ({
                 <>
                   {/* Create Kudos Button (only for tech leads) */}
                   {user.role === EUserRole.TECH_LEAD && (
-                    <Link href="/create-kudos" passHref>
+                    <Link href="/kudos/new" passHref>
                       <Button
                         variant="contained"
                         color="primary"
