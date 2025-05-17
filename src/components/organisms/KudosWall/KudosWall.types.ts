@@ -17,4 +17,16 @@ export interface IKudosWallProps {
    * Test ID for testing
    */
   "data-testid"?: string;
+  /**
+   * Function to load more kudos
+   */
+  onLoadMore?: () => void;
+  /**
+   * Whether there are more kudos to load
+   */
+  hasMore?: boolean;
+  /**
+   * Whether kudos are currently loading
+   */
+  isLoading?: boolean;
 }

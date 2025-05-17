@@ -1,20 +1,18 @@
 import { IUser } from "@/domain/models/auth";
+import { LocalStorageService } from "@/infrastructure/storage/LocalStorageService";
 
 export class CheckAuthUseCase {
   /**
    * Checks if user is authenticated based on token existence
    */
   execute(): boolean {
-    if (typeof window !== "undefined") {
-      try {
-        const token = localStorage.getItem("auth_token");
-        return !!token && this.validateTokenFormat(token);
-      } catch (error) {
-        console.error("Error checking authentication:", error);
-        return false;
-      }
+    try {
+      const token = LocalStorageService.getAuthToken();
+      return !!token && this.validateTokenFormat(token);
+    } catch (error) {
+      console.error("Error checking authentication:", error);
+      return false;
     }
-    return false;
   }
 
   /**
@@ -38,23 +36,12 @@ export class CheckAuthUseCase {
    * Gets user information from localStorage if available
    */
   getCurrentUser(): IUser | null {
-    if (typeof window !== "undefined") {
-      try {
-        const userString = localStorage.getItem("user");
-        if (userString) {
-          try {
-            return JSON.parse(userString);
-          } catch (parseError) {
-            console.error("Error parsing user data:", parseError);
-            return null;
-          }
-        }
-      } catch (storageError) {
-        console.error("Error accessing localStorage:", storageError);
-        return null;
-      }
+    try {
+      return LocalStorageService.getUser();
+    } catch (error) {
+      console.error("Error getting current user:", error);
+      return null;
     }
-    return null;
   }
 
   /**

@@ -45,7 +45,7 @@ interface AuthenticatedContentProps {
 const AuthenticatedContent: React.FC<AuthenticatedContentProps> = ({
   user,
 }) => {
-  const { kudosList, isLoading, error } = useKudos();
+  const { kudosList, isLoading, error, loadMore, hasMore } = useKudos();
 
   return (
     <Box>
@@ -55,7 +55,7 @@ const AuthenticatedContent: React.FC<AuthenticatedContentProps> = ({
 
       {/* Kudos Wall displayed directly on the homepage */}
       <Box sx={{ mt: 4 }}>
-        {isLoading ? (
+        {isLoading && kudosList.length === 0 ? (
           <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
             <CircularProgress />
           </Box>
@@ -66,7 +66,13 @@ const AuthenticatedContent: React.FC<AuthenticatedContentProps> = ({
             <Typography>{error}</Typography>
           </Box>
         ) : (
-          <KudosWall kudosList={kudosList} title="Recognition Wall" />
+          <KudosWall
+            kudosList={kudosList}
+            title="Recognition Wall"
+            onLoadMore={loadMore}
+            hasMore={hasMore}
+            isLoading={isLoading}
+          />
         )}
       </Box>
     </Box>

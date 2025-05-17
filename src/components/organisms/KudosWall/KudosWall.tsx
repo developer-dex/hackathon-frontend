@@ -7,6 +7,9 @@ export const KudosWall: React.FC<IKudosWallProps> = ({
   kudosList,
   title = "Kudos Wall",
   className = "",
+  onLoadMore,
+  hasMore = false,
+  isLoading = false,
   ...props
 }) => {
   return (
@@ -20,6 +23,27 @@ export const KudosWall: React.FC<IKudosWallProps> = ({
           </div>
         ))}
       </div>
+
+      {hasMore && (
+        <div className={styles.viewMoreContainer}>
+          <button
+            className={styles.viewMoreButton}
+            onClick={onLoadMore}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <span className={styles.loadingDot}></span>
+                <span className={styles.loadingDot}></span>
+                <span className={styles.loadingDot}></span>
+                <span className={styles.loadingText}>Loading</span>
+              </>
+            ) : (
+              "View More"
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

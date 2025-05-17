@@ -1,26 +1,32 @@
 import React, { useState } from "react";
 import {
   AppBar,
+  Box,
   Toolbar,
   Typography,
   Button,
-  Box,
-  Avatar,
+  IconButton,
   Menu,
   MenuItem,
-  IconButton,
-  useMediaQuery,
+  Avatar,
+  Drawer,
+  List,
+  ListItem,
   useTheme,
-  Stack,
+  useMediaQuery,
 } from "@mui/material";
+import MenuIcon from "@mui/icons-material/Menu";
 import Link from "next/link";
 import Image from "next/image";
 import { IUser, EUserRole } from "@/domain/models/auth";
 import { useRouter } from "next/router";
+import { AddIcon } from "@/components/icons/AddIcon";
+import styles from "@/styles/Header.module.css";
 
 interface IHeaderProps {
   user: IUser | null;
   onLogout: () => void;
+  isLoading?: boolean;
   "data-testid"?: string;
 }
 
@@ -38,6 +44,7 @@ const getUserInitials = (name: string): string => {
 const Header: React.FC<IHeaderProps> = ({
   user,
   onLogout,
+  isLoading,
   "data-testid": testId = "header",
 }) => {
   const theme = useTheme();
@@ -64,6 +71,10 @@ const Header: React.FC<IHeaderProps> = ({
 
   const handleMobileMenuClose = () => {
     setMobileMenuAnchorEl(null);
+  };
+
+  const navigateTo = (path: string) => {
+    router.push(path);
   };
 
   return (
@@ -116,7 +127,7 @@ const Header: React.FC<IHeaderProps> = ({
             <>
               {!user ? (
                 // Show login and signup buttons for mobile when not logged in
-                <Stack direction="row" spacing={1}>
+                <Box sx={{ display: "flex", gap: 2 }}>
                   <Link href="/login" passHref>
                     <Button
                       variant="outlined"
@@ -144,7 +155,7 @@ const Header: React.FC<IHeaderProps> = ({
                       Sign Up
                     </Button>
                   </Link>
-                </Stack>
+                </Box>
               ) : (
                 // Show user avatar or initials for mobile when logged in
                 <IconButton
@@ -206,7 +217,7 @@ const Header: React.FC<IHeaderProps> = ({
                       </Typography>
                     </Link>
                   </MenuItem>
-                  {user.role === EUserRole.TECH_LEAD && (
+                  {user && user.role === EUserRole.TEAM_LEAD && (
                     <MenuItem onClick={handleMobileMenuClose}>
                       <Link href="/kudos/new" passHref>
                         <Typography sx={{ width: "100%", cursor: "pointer" }}>
@@ -332,7 +343,7 @@ const Header: React.FC<IHeaderProps> = ({
                           </Typography>
                         </Link>
                       </MenuItem>
-                      {user.role === EUserRole.TECH_LEAD && (
+                      {user && user.role === EUserRole.TEAM_LEAD && (
                         <MenuItem onClick={handleClose}>
                           <Link href="/kudos/new" passHref>
                             <Typography sx={{ color: "inherit" }}>

@@ -3,8 +3,8 @@ import { IKudos, IKudosApiResponse } from "@/domain/entities/Kudos.types";
 export interface IKudosRepository {
   /**
    * Fetches a list of kudos
-   * @param offset Pagination offset
-   * @param limit Pagination limit
+   * @param offset Page number (0-based) for pagination
+   * @param limit Number of items per page
    * @returns A promise that resolves to an array of kudos or null if the request fails
    */
   getKudosList(

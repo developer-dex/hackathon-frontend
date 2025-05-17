@@ -6,8 +6,8 @@ export class GetKudosListUseCase {
 
   /**
    * Executes the use case to fetch a list of kudos
-   * @param offset Pagination offset
-   * @param limit Pagination limit
+   * @param offset Page number (0-based) for pagination
+   * @param limit Number of items per page
    * @returns A promise that resolves to an array of kudos and pagination information
    */
   async execute(
@@ -21,6 +21,7 @@ export class GetKudosListUseCase {
     error?: string;
   }> {
     try {
+      // Call repository with the page number (offset)
       const response = await this.kudosRepository.getKudosList(offset, limit);
 
       if (!response) {

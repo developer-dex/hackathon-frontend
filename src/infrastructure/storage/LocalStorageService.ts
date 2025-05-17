@@ -1,5 +1,14 @@
 import { IUser } from "@/domain/models/auth";
 
+/**
+ * Minimal user data interface for localStorage
+ */
+interface IMinimalUserData {
+  name: string;
+  role: string;
+  id: string;
+}
+
 export class LocalStorageService {
   private static readonly AUTH_TOKEN_KEY = "auth_token";
   private static readonly USER_KEY = "user";
@@ -29,22 +38,43 @@ export class LocalStorageService {
   }
 
   /**
-   * Store user data in localStorage
+   * Store minimal user data in localStorage (only name and role)
    */
   static setUser(user: IUser): void {
     if (typeof window === "undefined") return;
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+
+    // Only store minimal user data (name, role, and id)
+    const minimalUserData: IMinimalUserData = {
+      name: user.name,
+      role: user.role as string,
+      id: user.id, // including id for proper identification
+    };
+
+    localStorage.setItem(this.USER_KEY, JSON.stringify(minimalUserData));
   }
 
   /**
    * Get user data from localStorage
+   * Returns a partial user object with only the stored fields
    */
   static getUser(): IUser | null {
     if (typeof window === "undefined") return null;
     const userStr = localStorage.getItem(this.USER_KEY);
     if (!userStr) return null;
     try {
-      return JSON.parse(userStr) as IUser;
+      // Parse the minimal user data
+      const minimalUserData = JSON.parse(userStr) as IMinimalUserData;
+
+      // Construct a partial user object
+      // Other fields will be undefined, which is expected
+      const user: IUser = {
+        id: minimalUserData.id,
+        name: minimalUserData.name,
+        role: minimalUserData.role,
+        email: "", // Required by the IUser interface but not stored in localStorage
+      };
+
+      return user;
     } catch (error) {
       console.error("Error parsing user data from localStorage:", error);
       return null;

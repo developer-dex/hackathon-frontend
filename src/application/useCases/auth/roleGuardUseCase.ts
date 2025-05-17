@@ -5,7 +5,7 @@ export class RoleGuardUseCase {
   constructor(private checkAuthUseCase: CheckAuthUseCase) {}
 
   /**
-   * Check if current user has tech lead access
+   * Check if current user has team lead access
    */
   execute(): boolean {
     try {
@@ -14,10 +14,25 @@ export class RoleGuardUseCase {
         return false;
       }
 
-      // Then check if user has TECH_LEAD role
-      return this.checkAuthUseCase.hasRole(EUserRole.TECH_LEAD);
+      // Then check if user has TEAM_LEAD role
+      return this.checkAuthUseCase.hasRole(EUserRole.TEAM_LEAD);
     } catch (error) {
-      console.error("Error checking tech lead access:", error);
+      console.error("Error checking team lead access:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if current user has admin access
+   */
+  isAdmin(): boolean {
+    try {
+      if (!this.checkAuthUseCase.execute()) {
+        return false;
+      }
+      return this.checkAuthUseCase.hasRole(EUserRole.ADMIN);
+    } catch (error) {
+      console.error("Error checking admin access:", error);
       return false;
     }
   }
@@ -42,7 +57,7 @@ export class RoleGuardUseCase {
       const user = this.checkAuthUseCase.getCurrentUser();
       if (!user) return false;
 
-      return roles.includes(user.role);
+      return roles.includes(user.role as EUserRole);
     } catch (error) {
       console.error("Error checking user roles:", error);
       return false;

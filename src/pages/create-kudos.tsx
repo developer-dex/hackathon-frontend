@@ -13,16 +13,15 @@ interface ICreateKudosPageProps {
 const CreateKudosPage: NextPage<ICreateKudosPageProps> = ({ user }) => {
   const router = useRouter();
 
-  // Check if user has tech lead role on mount
+  // Redirect if user is not authenticated or not a tech lead
   useEffect(() => {
-    // Redirect if not authenticated or not a tech lead
-    if (!user || !authUseCase.roleGuard.hasRole(EUserRole.TECH_LEAD)) {
-      router.replace("/login");
+    if (!user || !authUseCase.roleGuard.hasRole(EUserRole.TEAM_LEAD)) {
+      router.replace("/");
     }
   }, [user, router]);
 
-  // Early render with no content if not authorized
-  if (!user || !authUseCase.roleGuard.hasRole(EUserRole.TECH_LEAD)) {
+  // For SSR - don't render the page content if not authenticated or not a tech lead
+  if (!user || !authUseCase.roleGuard.hasRole(EUserRole.TEAM_LEAD)) {
     return null;
   }
 
@@ -47,7 +46,7 @@ const CreateKudosPage: NextPage<ICreateKudosPageProps> = ({ user }) => {
         </Box>
 
         <Alert severity="info" sx={{ mb: 4 }}>
-          This is a protected page that only Tech Leads can access.
+          This is a protected page that only Team Leads can access.
         </Alert>
 
         {/* Kudos creation form would go here */}

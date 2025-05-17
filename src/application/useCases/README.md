@@ -52,7 +52,12 @@ authUseCase.logout.execute();
 const isAuthenticated = authUseCase.checkAuth.execute();
 
 // Check if user has a specific role
-const isTechLead = authUseCase.roleGuard.hasRole(EUserRole.TECH_LEAD);
+const isTeamLead = authUseCase.roleGuard.hasRole(EUserRole.TEAM_LEAD);
+
+// Example: Conditionally render content based on role
+{
+  isTeamLead && <AdminPanel />;
+}
 ```
 
 ## Factory Implementation

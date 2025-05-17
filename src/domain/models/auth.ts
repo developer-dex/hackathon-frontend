@@ -1,12 +1,13 @@
 export enum EUserRole {
-  TECH_LEAD = "TECH_LEAD",
-  TEAM_MEMBER = "TEAM_MEMBER",
+  TEAM_MEMBER = "Team Member",
+  TEAM_LEAD = "Team Lead",
+  ADMIN = "Admin",
 }
 
 export enum EVerificationStatus {
-  VERIFIED = "VERIFIED",
-  PENDING = "PENDING",
-  REJECTED = "REJECTED",
+  PENDING = "Pending",
+  VERIFIED = "Verified",
+  REJECTED = "Rejected",
 }
 
 export interface IUser {

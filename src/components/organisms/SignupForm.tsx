@@ -290,8 +290,10 @@ const SignupForm: React.FC<SignupFormProps> = ({
           }
           data-testid={`${testId}-role-input`}
         >
-          <MenuItem value={EUserRole.TEAM_MEMBER}>Team Member</MenuItem>
-          <MenuItem value={EUserRole.TECH_LEAD}>Tech Lead</MenuItem>
+          <MenuItem value={EUserRole.TEAM_MEMBER}>
+            {EUserRole.TEAM_MEMBER}
+          </MenuItem>
+          <MenuItem value={EUserRole.TEAM_LEAD}>{EUserRole.TEAM_LEAD}</MenuItem>
         </Select>
         {formErrors.role && (
           <Typography

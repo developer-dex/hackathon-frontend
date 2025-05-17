@@ -8,13 +8,15 @@ interface IUseKudosReturn {
   error: string | null;
   totalCount: number;
   fetchKudosList: (offset?: number, limit?: number) => Promise<void>;
+  loadMore: () => Promise<void>;
+  hasMore: boolean;
   offset: number;
   limit: number;
 }
 
 /**
  * Hook for fetching and managing kudos data
- * @returns An object containing the kudos list, loading state, error state, and a function to fetch kudos
+ * @returns An object containing the kudos list, loading state, error state, and functions to fetch kudos
  */
 export const useKudos = (): IUseKudosReturn => {
   const [kudosList, setKudosList] = useState<IKudos[]>([]);
@@ -61,6 +63,42 @@ export const useKudos = (): IUseKudosReturn => {
     [offset, limit]
   );
 
+  // Function to load more kudos (append to existing list)
+  const loadMore = useCallback(async () => {
+    if (isLoading || kudosList.length >= totalCount) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Increment page number (offset) by 1 to fetch the next page
+      const nextOffset = offset + 1;
+
+      const result = await kudosUseCases.getKudosList.execute(
+        nextOffset,
+        limit
+      );
+
+      if (result.error) {
+        setError(result.error);
+      } else {
+        // Append new kudos to the existing list
+        setKudosList((prevKudos) => [...prevKudos, ...result.kudosList]);
+        setTotalCount(result.totalCount);
+        setOffset(nextOffset);
+      }
+    } catch (err) {
+      console.error("Error loading more kudos:", err);
+      setError("An unexpected error occurred while loading more kudos");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [kudosList, totalCount, offset, limit, isLoading]);
+
+  // Calculate if there are more kudos to load
+  // Add 1 to offset before multiplication since offset is 0-indexed (page 0 is first page)
+  const hasMore = totalCount > (offset + 1) * limit;
+
   // Fetch kudos on component mount
   useEffect(() => {
     fetchKudosList();
@@ -72,6 +110,8 @@ export const useKudos = (): IUseKudosReturn => {
     error,
     totalCount,
     fetchKudosList,
+    loadMore,
+    hasMore,
     offset,
     limit,
   };
