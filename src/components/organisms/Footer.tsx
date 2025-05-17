@@ -2,7 +2,13 @@ import React from "react";
 import { Box, Container, Typography, Divider } from "@mui/material";
 import Link from "next/link";
 
-const Footer: React.FC = () => {
+interface IFooterProps {
+  "data-testid"?: string;
+}
+
+const Footer: React.FC<IFooterProps> = ({
+  "data-testid": testId = "footer",
+}) => {
   return (
     <Box
       component="footer"
@@ -12,9 +18,10 @@ const Footer: React.FC = () => {
         mt: "auto",
         backgroundColor: "#f5f5f5",
       }}
+      data-testid={testId}
     >
       <Container maxWidth="lg">
-        <Divider sx={{ mb: 3 }} />
+        <Divider sx={{ mb: 3 }} data-testid={`${testId}-divider`} />
 
         <Box
           sx={{
@@ -23,15 +30,19 @@ const Footer: React.FC = () => {
             justifyContent: "space-between",
             alignItems: "center",
           }}
+          data-testid={`${testId}-content`}
         >
-          <Box>
+          <Box data-testid={`${testId}-copyright`}>
             <Typography variant="body2" color="text.secondary">
               © {new Date().getFullYear()} KUDOS App - Recognize and appreciate
               your team members
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", gap: 3, mt: { xs: 2, sm: 0 } }}>
+          <Box
+            sx={{ display: "flex", gap: 3, mt: { xs: 2, sm: 0 } }}
+            data-testid={`${testId}-links`}
+          >
             <Link href="/about" passHref>
               <Typography
                 sx={{
@@ -42,6 +53,7 @@ const Footer: React.FC = () => {
                     textDecoration: "underline",
                   },
                 }}
+                data-testid={`${testId}-about-link`}
               >
                 About
               </Typography>
@@ -56,6 +68,7 @@ const Footer: React.FC = () => {
                     textDecoration: "underline",
                   },
                 }}
+                data-testid={`${testId}-privacy-link`}
               >
                 Privacy
               </Typography>
@@ -70,6 +83,7 @@ const Footer: React.FC = () => {
                     textDecoration: "underline",
                   },
                 }}
+                data-testid={`${testId}-terms-link`}
               >
                 Terms
               </Typography>
@@ -84,6 +98,7 @@ const Footer: React.FC = () => {
                     textDecoration: "underline",
                   },
                 }}
+                data-testid={`${testId}-contact-link`}
               >
                 Contact
               </Typography>

@@ -19,9 +19,14 @@ import { IUser, EUserRole } from "@/domain/models/auth";
 interface IHeaderProps {
   user: IUser | null;
   onLogout: () => void;
+  "data-testid"?: string;
 }
 
-const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
+const Header: React.FC<IHeaderProps> = ({
+  user,
+  onLogout,
+  "data-testid": testId = "header",
+}) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
@@ -45,7 +50,12 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
   };
 
   return (
-    <AppBar position="static" color="default" elevation={1}>
+    <AppBar
+      position="static"
+      color="default"
+      elevation={1}
+      data-testid={testId}
+    >
       <Toolbar>
         <Link href="/" passHref>
           <Typography
@@ -57,6 +67,7 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
               color: "primary.main",
               cursor: "pointer",
             }}
+            data-testid={`${testId}-logo`}
           >
             KUDOS App
           </Typography>
@@ -70,6 +81,7 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
               color="inherit"
               aria-label="menu"
               onClick={handleMobileMenu}
+              data-testid={`${testId}-mobile-menu-button`}
             >
               <MenuIcon />
             </IconButton>
@@ -77,17 +89,24 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
               anchorEl={mobileMenuAnchorEl}
               open={Boolean(mobileMenuAnchorEl)}
               onClose={handleMobileMenuClose}
+              data-testid={`${testId}-mobile-menu`}
             >
               {!user ? (
                 <>
-                  <MenuItem onClick={handleMobileMenuClose}>
+                  <MenuItem
+                    onClick={handleMobileMenuClose}
+                    data-testid={`${testId}-mobile-login`}
+                  >
                     <Link href="/login" passHref>
                       <Typography sx={{ width: "100%", cursor: "pointer" }}>
                         Login
                       </Typography>
                     </Link>
                   </MenuItem>
-                  <MenuItem onClick={handleMobileMenuClose}>
+                  <MenuItem
+                    onClick={handleMobileMenuClose}
+                    data-testid={`${testId}-mobile-signup`}
+                  >
                     <Link href="/signup" passHref>
                       <Typography sx={{ width: "100%", cursor: "pointer" }}>
                         Sign Up
@@ -97,7 +116,10 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
                 </>
               ) : (
                 <>
-                  <MenuItem onClick={handleMobileMenuClose}>
+                  <MenuItem
+                    onClick={handleMobileMenuClose}
+                    data-testid={`${testId}-mobile-kudos`}
+                  >
                     <Link href="/kudos" passHref>
                       <Typography sx={{ width: "100%", cursor: "pointer" }}>
                         All Kudos
@@ -105,7 +127,10 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
                     </Link>
                   </MenuItem>
                   {user.role === EUserRole.TECH_LEAD && (
-                    <MenuItem onClick={handleMobileMenuClose}>
+                    <MenuItem
+                      onClick={handleMobileMenuClose}
+                      data-testid={`${testId}-mobile-create-kudos`}
+                    >
                       <Link href="/create-kudos" passHref>
                         <Typography sx={{ width: "100%", cursor: "pointer" }}>
                           Create Kudos
@@ -113,7 +138,10 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
                       </Link>
                     </MenuItem>
                   )}
-                  <MenuItem onClick={handleMobileMenuClose}>
+                  <MenuItem
+                    onClick={handleMobileMenuClose}
+                    data-testid={`${testId}-mobile-profile`}
+                  >
                     <Link href="/profile" passHref>
                       <Typography sx={{ width: "100%", cursor: "pointer" }}>
                         Profile
@@ -125,6 +153,7 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
                       onLogout();
                       handleMobileMenuClose();
                     }}
+                    data-testid={`${testId}-mobile-logout`}
                   >
                     <Typography>Logout</Typography>
                   </MenuItem>
@@ -133,11 +162,15 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
             </Menu>
           </>
         ) : (
-          <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box
+            sx={{ display: "flex", alignItems: "center" }}
+            data-testid={`${testId}-desktop-menu`}
+          >
             <Link href="/kudos" passHref>
               <Button
                 color="inherit"
                 sx={{ mx: 1, textTransform: "none", cursor: "pointer" }}
+                data-testid={`${testId}-desktop-kudos`}
               >
                 All Kudos
               </Button>
@@ -155,13 +188,18 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
                         textTransform: "none",
                         cursor: "pointer",
                       }}
+                      data-testid={`${testId}-desktop-create-kudos`}
                     >
                       Create Kudos
                     </Button>
                   </Link>
                 )}
-                <Box sx={{ ml: 2 }}>
-                  <IconButton onClick={handleMenu} sx={{ p: 0 }}>
+                <Box sx={{ ml: 2 }} data-testid={`${testId}-user-menu`}>
+                  <IconButton
+                    onClick={handleMenu}
+                    sx={{ p: 0 }}
+                    data-testid={`${testId}-user-avatar`}
+                  >
                     <Avatar
                       alt={user.name}
                       src="/images/avatar.jpg"
@@ -172,23 +210,29 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
                     anchorEl={anchorEl}
                     open={Boolean(anchorEl)}
                     onClose={handleClose}
+                    data-testid={`${testId}-user-dropdown`}
                   >
-                    <MenuItem>
+                    <MenuItem data-testid={`${testId}-user-name`}>
                       <Typography variant="body2">{user.name}</Typography>
                     </MenuItem>
-                    <MenuItem>
+                    <MenuItem data-testid={`${testId}-user-email`}>
                       <Typography variant="body2" color="text.secondary">
                         {user.email}
                       </Typography>
                     </MenuItem>
-                    <MenuItem>
+                    <MenuItem data-testid={`${testId}-user-profile`}>
                       <Link href="/profile" passHref>
                         <Typography sx={{ cursor: "pointer" }}>
                           Profile
                         </Typography>
                       </Link>
                     </MenuItem>
-                    <MenuItem onClick={onLogout}>Logout</MenuItem>
+                    <MenuItem
+                      onClick={onLogout}
+                      data-testid={`${testId}-user-logout`}
+                    >
+                      Logout
+                    </MenuItem>
                   </Menu>
                 </Box>
               </>
@@ -198,6 +242,7 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
                   <Button
                     color="inherit"
                     sx={{ ml: 1, textTransform: "none", cursor: "pointer" }}
+                    data-testid={`${testId}-desktop-login`}
                   >
                     Login
                   </Button>
@@ -211,6 +256,7 @@ const Header: React.FC<IHeaderProps> = ({ user, onLogout }) => {
                       textTransform: "none",
                       cursor: "pointer",
                     }}
+                    data-testid={`${testId}-desktop-signup`}
                   >
                     Sign Up
                   </Button>

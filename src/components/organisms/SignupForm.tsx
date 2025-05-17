@@ -24,12 +24,14 @@ interface SignupFormProps {
   onSignup: (data: ISignupRequest) => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
+  "data-testid"?: string;
 }
 
 const SignupForm: React.FC<SignupFormProps> = ({
   onSignup,
   isLoading = false,
   error = null,
+  "data-testid": testId = "signup-form",
 }) => {
   const [formData, setFormData] = useState<ISignupRequest>({
     name: "",
@@ -105,9 +107,14 @@ const SignupForm: React.FC<SignupFormProps> = ({
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} noValidate>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      noValidate
+      data-testid={testId}
+    >
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2 }} data-testid={`${testId}-error`}>
           {error}
         </Alert>
       )}
@@ -137,6 +144,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
             borderRadius: "8px",
           },
         }}
+        data-testid={`${testId}-name-input`}
       />
 
       <TextField
@@ -164,6 +172,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
             borderRadius: "8px",
           },
         }}
+        data-testid={`${testId}-email-input`}
       />
 
       <TextField
@@ -191,6 +200,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
             borderRadius: "8px",
           },
         }}
+        data-testid={`${testId}-password-input`}
       />
 
       <FormControl
@@ -203,6 +213,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
             borderRadius: "8px",
           },
         }}
+        data-testid={`${testId}-role-select`}
       >
         <InputLabel id="role-label">Role</InputLabel>
         <Select
@@ -216,12 +227,17 @@ const SignupForm: React.FC<SignupFormProps> = ({
               <BadgeIcon />
             </InputAdornment>
           }
+          data-testid={`${testId}-role-input`}
         >
           <MenuItem value={EUserRole.TEAM_MEMBER}>Team Member</MenuItem>
           <MenuItem value={EUserRole.TECH_LEAD}>Tech Lead</MenuItem>
         </Select>
         {formErrors.role && (
-          <Typography variant="caption" color="error">
+          <Typography
+            variant="caption"
+            color="error"
+            data-testid={`${testId}-role-error`}
+          >
             {formErrors.role}
           </Typography>
         )}
@@ -243,6 +259,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
             backgroundColor: "#388E3C",
           },
         }}
+        data-testid={`${testId}-submit-button`}
       >
         {isLoading ? <CircularProgress size={24} color="inherit" /> : "Sign Up"}
       </Button>

@@ -3,8 +3,7 @@
  * Currently configured as a placeholder for future implementation
  */
 
-// Import axios or other HTTP client library when needed
-// import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 
 /**
  * Configuration options for the API client
@@ -28,60 +27,91 @@ const DEFAULT_CONFIG: ApiClientConfig = {
 
 /**
  * API client for handling HTTP requests
- * Currently a placeholder implementation - will be replaced with actual axios implementation
- * when backend integration is needed
  */
 export class ApiClient {
-  private config: ApiClientConfig;
+  private client: AxiosInstance;
 
   constructor(config: Partial<ApiClientConfig> = {}) {
-    this.config = { ...DEFAULT_CONFIG, ...config };
+    const finalConfig = { ...DEFAULT_CONFIG, ...config };
+    this.client = axios.create(finalConfig);
+
+    // Add response interceptor for error handling
+    this.client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          console.error("API Error:", error.response.data);
+          return Promise.reject(error.response.data);
+        } else if (error.request) {
+          // The request was made but no response was received
+          console.error("API Request Error:", error.request);
+          return Promise.reject(new Error("No response received from server"));
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          console.error("API Setup Error:", error.message);
+          return Promise.reject(error);
+        }
+      }
+    );
   }
 
   /**
    * Performs a GET request to the specified endpoint
    * @param url - The endpoint URL
-   * @param params - Query parameters
+   * @param config - Optional axios request configuration
    * @returns Promise with the response data
    */
-  async get<T>(url: string, params?: Record<string, unknown>): Promise<T> {
-    console.log(`GET ${this.config.baseURL}${url}`, params);
-    // Mock implementation - would use axios in real implementation
-    return Promise.resolve({} as T);
+  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response: AxiosResponse<T> = await this.client.get(url, config);
+    return response.data;
   }
 
   /**
    * Performs a POST request to the specified endpoint
    * @param url - The endpoint URL
    * @param data - The data to send in the request body
+   * @param config - Optional axios request configuration
    * @returns Promise with the response data
    */
-  async post<T>(url: string, data?: unknown): Promise<T> {
-    console.log(`POST ${this.config.baseURL}${url}`, data);
-    // Mock implementation - would use axios in real implementation
-    return Promise.resolve({} as T);
+  async post<T>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    const response: AxiosResponse<T> = await this.client.post(
+      url,
+      data,
+      config
+    );
+    return response.data;
   }
 
   /**
    * Performs a PUT request to the specified endpoint
    * @param url - The endpoint URL
    * @param data - The data to send in the request body
+   * @param config - Optional axios request configuration
    * @returns Promise with the response data
    */
-  async put<T>(url: string, data?: unknown): Promise<T> {
-    console.log(`PUT ${this.config.baseURL}${url}`, data);
-    // Mock implementation - would use axios in real implementation
-    return Promise.resolve({} as T);
+  async put<T>(
+    url: string,
+    data?: unknown,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    const response: AxiosResponse<T> = await this.client.put(url, data, config);
+    return response.data;
   }
 
   /**
    * Performs a DELETE request to the specified endpoint
    * @param url - The endpoint URL
+   * @param config - Optional axios request configuration
    * @returns Promise with the response data
    */
-  async delete<T>(url: string): Promise<T> {
-    console.log(`DELETE ${this.config.baseURL}${url}`);
-    // Mock implementation - would use axios in real implementation
-    return Promise.resolve({} as T);
+  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response: AxiosResponse<T> = await this.client.delete(url, config);
+    return response.data;
   }
 }

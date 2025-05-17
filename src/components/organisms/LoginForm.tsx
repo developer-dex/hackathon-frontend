@@ -17,12 +17,14 @@ interface LoginFormProps {
   onLogin: (credentials: IAuthCredentials) => Promise<void>;
   isLoading?: boolean;
   error?: string | null;
+  "data-testid"?: string;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
   onLogin,
   isLoading = false,
   error = null,
+  "data-testid": testId = "login-form",
 }) => {
   const [formData, setFormData] = useState<IAuthCredentials>({
     email: "",
@@ -76,9 +78,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} noValidate>
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      noValidate
+      data-testid={testId}
+    >
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2 }} data-testid={`${testId}-error`}>
           {error}
         </Alert>
       )}
@@ -108,6 +115,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             borderRadius: "8px",
           },
         }}
+        data-testid={`${testId}-email-input`}
       />
 
       <TextField
@@ -135,6 +143,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             borderRadius: "8px",
           },
         }}
+        data-testid={`${testId}-password-input`}
       />
 
       <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
@@ -173,6 +182,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             backgroundColor: "#388E3C",
           },
         }}
+        data-testid={`${testId}-submit-button`}
       >
         {isLoading ? <CircularProgress size={24} color="inherit" /> : "Login"}
       </Button>

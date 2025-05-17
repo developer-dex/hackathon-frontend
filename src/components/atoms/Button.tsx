@@ -5,6 +5,7 @@ interface IButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   isLoading?: boolean;
+  "data-testid"?: string;
 }
 
 /**
@@ -18,6 +19,7 @@ export const Button: React.FC<IButtonProps> = ({
   isLoading = false,
   className = "",
   disabled = false,
+  "data-testid": testId = "button",
   ...props
 }) => {
   // Base classes
@@ -57,7 +59,12 @@ export const Button: React.FC<IButtonProps> = ({
   `;
 
   return (
-    <button className={classes} disabled={disabled || isLoading} {...props}>
+    <button
+      className={classes}
+      disabled={disabled || isLoading}
+      data-testid={testId}
+      {...props}
+    >
       {isLoading ? (
         <>
           <svg
@@ -65,6 +72,7 @@ export const Button: React.FC<IButtonProps> = ({
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
+            data-testid={`${testId}-loading-spinner`}
           >
             <circle
               className="opacity-25"

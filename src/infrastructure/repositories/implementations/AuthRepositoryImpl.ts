@@ -7,6 +7,7 @@ import {
   EVerificationStatus,
 } from "@/domain/models/auth";
 import { IAuthRepository } from "@/infrastructure/repositories/interfaces/repositories/auth.interface";
+import { LocalStorageService } from "@/infrastructure/storage/LocalStorageService";
 
 interface UserDTO {
   id: string;
@@ -62,9 +63,6 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
       console.log("User:", user);
 
-      // Store token in localStorage
-      localStorage.setItem("auth_token", token);
-
       // Map the user data from API response to our domain model
       const mappedUser = {
         id: user.id,
@@ -77,8 +75,9 @@ export class AuthRepositoryImpl implements IAuthRepository {
         updatedAt: user.updatedAt,
       };
 
-      // Store the complete user object
-      localStorage.setItem("user", JSON.stringify(mappedUser));
+      // Store auth data using LocalStorageService
+      LocalStorageService.setAuthToken(token);
+      LocalStorageService.setUser(mappedUser);
 
       return {
         user: mappedUser,
@@ -117,9 +116,6 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
       const { user, token } = responseData.data;
 
-      // Store token in localStorage
-      localStorage.setItem("auth_token", token);
-
       // Map the user data from API response to our domain model
       const mappedUser = {
         id: user.id,
@@ -132,8 +128,9 @@ export class AuthRepositoryImpl implements IAuthRepository {
         updatedAt: user.updatedAt,
       };
 
-      // Store the complete user object
-      localStorage.setItem("user", JSON.stringify(mappedUser));
+      // Store auth data using LocalStorageService
+      LocalStorageService.setAuthToken(token);
+      LocalStorageService.setUser(mappedUser);
 
       return {
         user: mappedUser,
