@@ -1,0 +1,332 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Unit Testing SOP for Use Cases
+
+## Overview
+
+This document outlines the standard operating procedures for writing unit tests for use cases in a frontend application following clean architecture principles.
+
+## Core Principles
+
+### 1. Test Boundaries
+
+- Only mock external dependencies (outside our codebase)
+- Do not mock internal repositories or services
+- Use real implementations for code within our boundaries
+- Follow Martin Fowler's test double principles
+
+### 2. Test Structure
+
+```typescript
+describe("[UseCaseName]", () => {
+  let useCase: UseCase;
+  let dependencies: Dependencies;
+
+  beforeEach(() => {
+    // Setup
+    dependencies = new Dependencies();
+    useCase = new UseCase(dependencies);
+    jest.clearAllMocks();
+  });
+
+  describe("execute", () => {
+    it("should [expected behavior]", async () => {
+      // Arrange
+      // Act
+      // Assert
+    });
+  });
+});
+```
+
+## External Dependencies to Mock
+
+### 1. HTTP Client
+
+```typescript
+jest.mock("@/infrastructure/http/httpClient", () => ({
+  httpClient: {
+    get: jest.fn(),
+    post: jest.fn(),
+    patch: jest.fn(),
+    delete: jest.fn(),
+  },
+}));
+```
+
+### 2. Local Storage
+
+```typescript
+jest.mock("@/infrastructure/storage/LocalStorageService", () => ({
+  LocalStorageService: {
+    getAuthToken: jest.fn(),
+    setAuthToken: jest.fn(),
+    getUser: jest.fn(),
+    setUser: jest.fn(),
+    clearAuth: jest.fn(),
+  },
+}));
+```
+
+### 3. Global APIs
+
+```typescript
+global.fetch = jest.fn();
+```
+
+## Test Scenarios
+
+### 1. Happy Path
+
+```typescript
+it("should successfully [action]", async () => {
+  // Arrange
+  const mockData = {
+    /* test data */
+  };
+  const mockResponse = {
+    /* expected response */
+  };
+
+  // Setup mocks
+  (httpClient.post as jest.Mock).mockResolvedValue({
+    data: mockResponse,
+  });
+
+  // Act
+  const result = await useCase.execute(mockData);
+
+  // Assert
+  expect(result).toEqual(expectedResult);
+  expect(httpClient.post).toHaveBeenCalledWith(
+    expectedEndpoint,
+    mockData,
+    expectedConfig
+  );
+});
+```
+
+### 2. Error Handling
+
+```typescript
+it("should handle [error scenario]", async () => {
+  // Arrange
+  const mockData = {
+    /* test data */
+  };
+  const errorMessage = "Error message";
+
+  // Setup mocks
+  (httpClient.post as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+  // Act
+  const result = await useCase.execute(mockData);
+
+  // Assert
+  expect(result.success).toBe(false);
+  expect(result.message).toBe(errorMessage);
+});
+```
+
+### 3. Edge Cases
+
+```typescript
+it("should handle [edge case]", async () => {
+  // Arrange
+  const mockData = {
+    /* edge case data */
+  };
+
+  // Setup mocks
+  (LocalStorageService.getAuthToken as jest.Mock).mockReturnValue(null);
+
+  // Act
+  const result = await useCase.execute(mockData);
+
+  // Assert
+  expect(result).toBeNull();
+});
+```
+
+## Best Practices
+
+### 1. Test Organization
+
+- Group related tests using `describe` blocks
+- Use clear, descriptive test names
+- Follow the Arrange-Act-Assert pattern
+- Keep tests focused and atomic
+
+### 2. Mocking Strategy
+
+- Only mock external dependencies
+- Use real implementations for internal code
+- Clear mocks between tests
+- Verify mock calls when relevant
+
+### 3. Error Handling
+
+- Test both success and failure paths
+- Verify error messages and types
+- Test edge cases and boundary conditions
+- Handle async errors properly
+
+### 4. Data Setup
+
+- Use realistic test data
+- Create helper functions for common setup
+- Keep test data close to the test
+- Use TypeScript interfaces for type safety
+
+## Example Implementation
+
+```typescript
+import { UseCase } from "./useCase";
+import { httpClient } from "@/infrastructure/http/httpClient";
+import { LocalStorageService } from "@/infrastructure/storage/LocalStorageService";
+
+// Mock only external dependencies
+jest.mock("@/infrastructure/http/httpClient");
+jest.mock("@/infrastructure/storage/LocalStorageService");
+
+describe("UseCase", () => {
+  let useCase: UseCase;
+
+  beforeEach(() => {
+    useCase = new UseCase();
+    jest.clearAllMocks();
+  });
+
+  describe("execute", () => {
+    it("should successfully perform action", async () => {
+      // Arrange
+      const mockData = {
+        /* test data */
+      };
+      const mockResponse = {
+        /* expected response */
+      };
+
+      (httpClient.post as jest.Mock).mockResolvedValue({
+        data: mockResponse,
+      });
+
+      // Act
+      const result = await useCase.execute(mockData);
+
+      // Assert
+      expect(result).toEqual(expectedResult);
+      expect(httpClient.post).toHaveBeenCalledWith(
+        expectedEndpoint,
+        mockData,
+        expectedConfig
+      );
+    });
+
+    it("should handle API errors", async () => {
+      // Arrange
+      const mockData = {
+        /* test data */
+      };
+      const errorMessage = "API Error";
+
+      (httpClient.post as jest.Mock).mockRejectedValue(new Error(errorMessage));
+
+      // Act
+      const result = await useCase.execute(mockData);
+
+      // Assert
+      expect(result.success).toBe(false);
+      expect(result.message).toBe(errorMessage);
+    });
+
+    it("should handle missing auth token", async () => {
+      // Arrange
+      const mockData = {
+        /* test data */
+      };
+      (LocalStorageService.getAuthToken as jest.Mock).mockReturnValue(null);
+
+      // Act
+      const result = await useCase.execute(mockData);
+
+      // Assert
+      expect(result).toBeNull();
+    });
+  });
+});
+```
+
+## Common Test Patterns
+
+### 1. Authentication Tests
+
+```typescript
+it("should include auth token in request", async () => {
+  const mockToken = "test-token";
+  (LocalStorageService.getAuthToken as jest.Mock).mockReturnValue(mockToken);
+
+  await useCase.execute(mockData);
+
+  expect(httpClient.post).toHaveBeenCalledWith(
+    expect.any(String),
+    expect.any(Object),
+    {
+      headers: {
+        Authorization: `Bearer ${mockToken}`,
+      },
+    }
+  );
+});
+```
+
+### 2. Response Transformation Tests
+
+```typescript
+it("should transform API response correctly", async () => {
+  const mockApiResponse = {
+    /* raw API response */
+  };
+  const expectedTransformedData = {
+    /* expected format */
+  };
+
+  (httpClient.get as jest.Mock).mockResolvedValue({
+    data: mockApiResponse,
+  });
+
+  const result = await useCase.execute();
+
+  expect(result).toEqual(expectedTransformedData);
+});
+```
+
+### 3. Validation Tests
+
+```typescript
+it("should validate input data", async () => {
+  const invalidData = {
+    /* invalid test data */
+  };
+
+  const result = await useCase.execute(invalidData);
+
+  expect(result.success).toBe(false);
+  expect(result.message).toContain("validation");
+});
+```
+
+## Conclusion
+
+This SOP provides a standardized approach to writing unit tests for use cases, focusing on:
+
+- Clear test boundaries
+- Proper mocking strategy
+- Comprehensive test coverage
+- Consistent test structure
+- Best practices for error handling and edge cases
+
+Remember to adapt these guidelines based on specific project requirements while maintaining the core principles of clean architecture and effective testing.
