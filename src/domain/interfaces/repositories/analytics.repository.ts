@@ -14,5 +14,8 @@ export interface ITopTeam {
 }
 
 export interface IAnalyticsRepository {
-  getAnalytics(period: TimePeriod): Promise<AnalyticsResponseDtoData>;
+  getAnalytics(
+    period: TimePeriod,
+    token: string
+  ): Promise<AnalyticsResponseDtoData>;
 }

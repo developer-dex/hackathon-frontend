@@ -8,4 +8,8 @@ module.exports = {
   },
   setupFilesAfterEnv: ["<rootDir>/src/test-setup.ts"],
   testPathIgnorePatterns: ["<rootDir>/.next/", "<rootDir>/node_modules/"],
+  testMatch: [
+    "**/__tests__/**/*.test.[jt]s?(x)",
+    "**/?(*.)+(spec|test).[jt]s?(x)",
+  ],
 };

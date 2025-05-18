@@ -29,6 +29,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { TrendingWordsPieChart } from "@/components/molecules/TrendingWordsPieChart/TrendingWordsPieChart";
+import { LocalStorageService } from "@/infrastructure/storage/LocalStorageService";
 
 interface DashboardProps {
   user: IUser | null;
@@ -47,7 +48,11 @@ const Dashboard: React.FC<DashboardProps> = ({ user, onLogout }) => {
 
   // Memoize the analytics use case to prevent recreation on each render
   const analyticsUseCase = useMemo(
-    () => new GetAnalyticsUseCase(new AnalyticsRepositoryImpl()),
+    () =>
+      new GetAnalyticsUseCase(
+        new AnalyticsRepositoryImpl(),
+        LocalStorageService
+      ),
     []
   );
 

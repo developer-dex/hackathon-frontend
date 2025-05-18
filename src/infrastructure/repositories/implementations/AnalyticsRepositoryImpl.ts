@@ -9,9 +9,6 @@ import { LocalStorageService } from "@/infrastructure/storage/LocalStorageServic
 
 export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
   private readonly apiBaseUrl: string;
-  private analyticsCache: Map<TimePeriod, AnalyticsResponseDto> = new Map();
-  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
-  private lastFetchTime: Map<TimePeriod, number> = new Map();
 
   private localStorageService: LocalStorageServiceStatic;
   constructor() {
@@ -23,22 +20,11 @@ export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
     return `${this.apiBaseUrl}/api/analytics?timePeriod=${period}`;
   }
 
-  private updateCache(period: TimePeriod, data: AnalyticsResponseDto): void {
-    this.analyticsCache.set(period, data);
-    this.lastFetchTime.set(period, Date.now());
-  }
-
-  private clearCache(period: TimePeriod): void {
-    this.analyticsCache.delete(period);
-    this.lastFetchTime.delete(period);
-  }
-
-  async getAnalytics(period: TimePeriod): Promise<AnalyticsResponseDtoData> {
+  async getAnalytics(
+    period: TimePeriod,
+    token: string
+  ): Promise<AnalyticsResponseDtoData> {
     try {
-      // Clear expired cache
-      this.clearCache(period);
-
-      const token = this.localStorageService.getAuthToken();
       // Fetch fresh data
       const response = await fetch(this.getAnalyticsEndpoint(period), {
         method: "GET",
@@ -53,9 +39,6 @@ export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
       }
 
       const data: AnalyticsResponseDto = await response.json();
-
-      // Update cache
-      this.updateCache(period, data);
 
       return {
         topRecognizedIndividuals: data.data.topRecognizedIndividuals,
