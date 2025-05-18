@@ -53,8 +53,10 @@ export const TopRecognizedIndividuals: React.FC<
     }
   }, [data]);
 
-  // Sort data by count descending
-  const sortedData = [...data].sort((a, b) => b.count - a.count);
+  // Sort data by count descending and limit to top 5
+  const sortedData = [...data]
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
 
   // Use maxY for axis and bar scaling
   const yLabels = Array.from({ length: Y_TICKS + 1 }, (_, i) =>
@@ -78,11 +80,8 @@ export const TopRecognizedIndividuals: React.FC<
     setTooltip((t) => ({ ...t, visible: false }));
 
   return (
-    <div className="py-4">
-      <h3 className="text-xl font-bold mb-4 text-left tracking-tight">
-        Top Recognized Individuals
-      </h3>
-      <div className="flex flex-row items-end relative">
+    <div className="h-full w-full">
+      <div className="flex flex-row items-end relative h-full">
         <div className="relative w-9 mr-2 h-[150px] flex flex-col justify-between">
           {yLabels.map((label, i) => (
             <div
@@ -107,13 +106,18 @@ export const TopRecognizedIndividuals: React.FC<
               }}
             />
           ))}
-          <div className="flex items-end gap-8 min-h-[150px] w-full relative z-10">
+          <div className="grid grid-cols-5 w-full relative z-10">
             {sortedData.map((person, idx) => (
               <div
                 key={person.name}
-                className="flex flex-col justify-end flex-1 min-w-[60px]"
+                className="flex flex-col justify-end items-center"
               >
-                <span className="text-base font-semibold text-blue-400 mt-0.5 px-3">
+                <span 
+                  ref={(el) => {
+                    countsRef.current[idx] = el;
+                  }}
+                  className="text-base font-semibold text-blue-400 mb-1 text-center"
+                >
                   {person.count}
                 </span>
                 <div
