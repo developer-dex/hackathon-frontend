@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import { ISignupRequest } from "@/domain/models/auth";
 import { authUseCase } from "@/application/useCases";
-import { toastInfo, toastError } from "@/application/utils/toast";
+import { toastInfo, toastError } from "@/application/shared/utils/toast";
 
 /**
  * Hook for handling user signup

@@ -6,7 +6,7 @@ import AuthLayout from "@/components/templates/AuthLayout";
 import LoginForm from "@/components/organisms/LoginForm";
 import { IAuthCredentials, IUser } from "@/domain/models/auth";
 import { authUseCase } from "@/application/useCases";
-import { toastSuccess, toastError } from "@/application/utils/toast";
+import { toastSuccess, toastError } from "@/application/shared/utils/toast";
 
 interface ILoginPageProps {
   setUser: (user: IUser) => void;

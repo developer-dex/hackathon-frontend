@@ -6,7 +6,7 @@ import { IUser } from "@/domain/models/auth";
 import { authUseCase } from "@/application/useCases";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { toastInfo } from "@/application/utils/toast";
+import { toastInfo } from "@/application/shared/utils/toast";
 
 // Create Material UI theme
 const CTHEME = createTheme({

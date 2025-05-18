@@ -18,7 +18,7 @@ import {
 } from "@/domain/models/analytics";
 import { GetAnalyticsUseCase } from "@/application/useCases/analytics/GetAnalyticsUseCase";
 import { AnalyticsRepositoryImpl } from "@/infrastructure/repositories/implementations/AnalyticsRepositoryImpl";
-import { toastError } from "@/application/utils/toast";
+import { toastError } from "@/application/shared/utils/toast";
 import { debounce } from "lodash";
 import {
   PieChart,
