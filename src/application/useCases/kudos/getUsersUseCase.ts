@@ -75,8 +75,8 @@ interface IUsersResponse {
  * Pagination params for fetching users
  */
 export interface IPaginationParams {
-  offset: number;
-  limit: number;
+  offset?: number;
+  limit?: number;
 }
 
 /**
@@ -103,7 +103,10 @@ export class GetUsersUseCase {
       // Create config for request with headers
       const config: {
         headers?: { Authorization: string };
-        params?: { offset: number; limit: number };
+        params?: {
+          offset?: number;
+          limit?: number;
+        };
       } = {
         headers: token
           ? {
@@ -112,12 +115,32 @@ export class GetUsersUseCase {
           : undefined,
       };
 
-      // Add query parameters for pagination if provided
+      //   Add query parameters for pagination ONLY if explicitly provided
       if (paginationParams) {
-        config.params = {
-          offset: paginationParams.offset,
-          limit: paginationParams.limit,
-        };
+        // Initialize params object only if we have pagination parameters
+        config.params = {};
+
+        // Only add offset if it's defined
+        if (paginationParams.offset !== undefined) {
+          config.params.offset = paginationParams.offset;
+        }
+
+        // Only add limit if it's defined
+        if (paginationParams.limit !== undefined) {
+          config.params.limit = paginationParams.limit;
+        }
+
+        if (paginationParams.offset === 0 && paginationParams.limit === 10) {
+          config.params = undefined;
+        }
+
+        // If both parameters are undefined, don't send params at all
+        if (
+          paginationParams.offset === undefined &&
+          paginationParams.limit === undefined
+        ) {
+          config.params = undefined;
+        }
       }
 
       const response = await httpClient.get<IUsersResponse>(
@@ -128,10 +151,12 @@ export class GetUsersUseCase {
       // Process the response to ensure it matches the expected format
       let usersData: IUserRaw[] = [];
       let total = 0;
-      let offset = paginationParams?.offset || 0;
-      let limit = paginationParams?.limit || 10;
 
-      // Extract pagination info if available
+      // Default values for when pagination info isn't available - use 0 and total users if not specified
+      let offset = paginationParams?.offset ?? 0;
+      let limit = paginationParams?.limit ?? 0; // Will be updated to array length if not provided
+
+      // Extract pagination info if available in the response
       if (response.data.pagination) {
         total = response.data.pagination.total;
         offset = response.data.pagination.offset;
@@ -202,6 +227,16 @@ export class GetUsersUseCase {
             : undefined),
         teamId: user.teamId,
       }));
+
+      // If total wasn't set by pagination, use the length of the mappedUsers array
+      if (total === 0) {
+        total = mappedUsers.length;
+      }
+
+      // If limit wasn't provided in pagination params, set it to match the total users
+      if (!paginationParams?.limit) {
+        limit = mappedUsers.length;
+      }
 
       return {
         users: mappedUsers,

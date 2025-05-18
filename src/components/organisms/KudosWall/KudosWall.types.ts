@@ -29,4 +29,8 @@ export interface IKudosWallProps {
    * Whether kudos are currently loading
    */
   isLoading?: boolean;
+  /**
+   * Whether to hide the load more button
+   */
+  hideLoadMore?: boolean;
 }
