@@ -7,6 +7,7 @@ import {
 } from "../../../domain/constants/kudosThemes";
 import { ICategory } from "@/domain/entities/Kudos.types";
 import Image from "next/image";
+import { useRouter } from "next/router";
 
 export const KudosCard: React.FC<IKudosCardProps> = ({
   kudos,
@@ -14,6 +15,8 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
   className = "",
   ...props
 }) => {
+  const router = useRouter();
+
   // Try to determine the theme based on category
   let theme = defaultKudosTheme;
 
@@ -78,11 +81,38 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
     borderBottom: `1px solid ${theme.textColor}20`,
   };
 
+  // Handle click event to navigate to user profile
+  const handleCardClick = () => {
+    if (onClick) {
+      // Use the provided onClick handler if available
+      onClick();
+    } else {
+      // Look for various ID formats to use for navigation
+      let targetId = null;
+
+      // Try to get the receiver ID from the receiver object (modern format)
+      if (kudos.receiver && kudos.receiver.id) {
+        targetId = kudos.receiver.id;
+      }
+      // Fall back to using the kudos ID itself if no receiver ID is available
+      else if (kudos.id) {
+        targetId = kudos.id;
+      }
+
+      // If we found an ID to use, navigate to that user's profile
+      if (targetId) {
+        router.push(`/user/${targetId}`);
+      }
+    }
+  };
+
   return (
     <div
       className={`${styles.kudosCard} ${className}`}
-      style={{ backgroundColor: theme.backgroundColor }}
-      onClick={onClick}
+      style={{
+        backgroundColor: theme.backgroundColor,
+        cursor: "default",
+      }}
       {...props}
     >
       <div
@@ -117,7 +147,11 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
           </span>
         </div>
       </div>
-      <div className={styles.recipientInfo}>
+      <div
+        className={styles.recipientInfo}
+        onClick={handleCardClick}
+        style={{ cursor: "pointer" }}
+      >
         <div className={styles.avatarContainer}>
           <Image
             src={kudos.recipientAvatarUrl || "/images/default-avatar.png"}

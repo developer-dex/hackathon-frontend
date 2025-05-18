@@ -147,6 +147,16 @@ export const KudosFilters: React.FC<KudosFiltersProps> = ({
                 </InputAdornment>
               }
               disabled={loadingUsers}
+              placeholder="Select sender"
+              displayEmpty
+              renderValue={(selected) => {
+                if (selected === "") {
+                  return <em>Select sender</em>;
+                }
+
+                const selectedUser = users.find((user) => user.id === selected);
+                return selectedUser ? selectedUser.name : "Unknown";
+              }}
               sx={{
                 ...(filters.senderId && {
                   "& .MuiOutlinedInput-notchedOutline": {
@@ -163,9 +173,14 @@ export const KudosFilters: React.FC<KudosFiltersProps> = ({
                     },
                   },
                 }),
+                ".MuiSelect-select em": {
+                  color: "#777",
+                  fontStyle: "normal",
+                  opacity: 0.7,
+                  fontSize: "0.9rem",
+                },
               }}
             >
-              <MenuItem value="">All Senders</MenuItem>
               {loadingUsers ? (
                 <MenuItem disabled>
                   <CircularProgress size={20} sx={{ mr: 1 }} /> Loading...
@@ -201,6 +216,16 @@ export const KudosFilters: React.FC<KudosFiltersProps> = ({
                 </InputAdornment>
               }
               disabled={loadingUsers}
+              placeholder="Select receiver"
+              displayEmpty
+              renderValue={(selected) => {
+                if (selected === "") {
+                  return <em>Select receiver</em>;
+                }
+
+                const selectedUser = users.find((user) => user.id === selected);
+                return selectedUser ? selectedUser.name : "Unknown";
+              }}
               sx={{
                 ...(filters.receiverId && {
                   "& .MuiOutlinedInput-notchedOutline": {
@@ -217,9 +242,14 @@ export const KudosFilters: React.FC<KudosFiltersProps> = ({
                     },
                   },
                 }),
+                ".MuiSelect-select em": {
+                  color: "#777",
+                  fontStyle: "normal",
+                  opacity: 0.7,
+                  fontSize: "0.9rem",
+                },
               }}
             >
-              <MenuItem value="">All Receivers</MenuItem>
               {loadingUsers ? (
                 <MenuItem disabled>
                   <CircularProgress size={20} sx={{ mr: 1 }} /> Loading...
@@ -255,6 +285,18 @@ export const KudosFilters: React.FC<KudosFiltersProps> = ({
                 </InputAdornment>
               }
               disabled={loadingCategories}
+              placeholder="Select category"
+              displayEmpty
+              renderValue={(selected) => {
+                if (selected === "") {
+                  return <em>Select category</em>;
+                }
+
+                const selectedCategory = categories.find(
+                  (cat) => cat.id === selected
+                );
+                return selectedCategory ? selectedCategory.name : "Unknown";
+              }}
               sx={{
                 ...(filters.categoryId && {
                   "& .MuiOutlinedInput-notchedOutline": {
@@ -271,9 +313,14 @@ export const KudosFilters: React.FC<KudosFiltersProps> = ({
                     },
                   },
                 }),
+                ".MuiSelect-select em": {
+                  color: "#777",
+                  fontStyle: "normal",
+                  opacity: 0.7,
+                  fontSize: "0.9rem",
+                },
               }}
             >
-              <MenuItem value="">All Categories</MenuItem>
               {loadingCategories ? (
                 <MenuItem disabled>
                   <CircularProgress size={20} sx={{ mr: 1 }} /> Loading...
@@ -309,6 +356,16 @@ export const KudosFilters: React.FC<KudosFiltersProps> = ({
                 </InputAdornment>
               }
               disabled={loadingTeams}
+              placeholder="Select team"
+              displayEmpty
+              renderValue={(selected) => {
+                if (selected === "") {
+                  return <em>Select team</em>;
+                }
+
+                const selectedTeam = teams.find((team) => team.id === selected);
+                return selectedTeam ? selectedTeam.name : "Unknown";
+              }}
               sx={{
                 ...(filters.teamId && {
                   "& .MuiOutlinedInput-notchedOutline": {
@@ -325,9 +382,14 @@ export const KudosFilters: React.FC<KudosFiltersProps> = ({
                     },
                   },
                 }),
+                ".MuiSelect-select em": {
+                  color: "#777",
+                  fontStyle: "normal",
+                  opacity: 0.7,
+                  fontSize: "0.9rem",
+                },
               }}
             >
-              <MenuItem value="">All Teams</MenuItem>
               {loadingTeams ? (
                 <MenuItem disabled>
                   <CircularProgress size={20} sx={{ mr: 1 }} /> Loading...

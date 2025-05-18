@@ -51,7 +51,7 @@ export const useUsers = () => {
   // Function to change page
   const changePage = (pageIndex: number) => {
     // pageIndex is 0-based index of the page
-    const newOffset = pageIndex;
+    const newOffset = pageIndex * pagination.limit;
     fetchUsers({ offset: newOffset, limit: pagination.limit });
   };
 

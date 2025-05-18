@@ -10,6 +10,7 @@ export const KudosWall: React.FC<IKudosWallProps> = ({
   onLoadMore,
   hasMore = false,
   isLoading = false,
+  hideLoadMore = false,
   ...props
 }) => {
   // Debounce the onLoadMore function to prevent multiple calls
@@ -30,7 +31,7 @@ export const KudosWall: React.FC<IKudosWallProps> = ({
         ))}
       </div>
 
-      {hasMore && (
+      {!hideLoadMore && hasMore && (
         <div className={styles.viewMoreContainer}>
           <button
             className={styles.viewMoreButton}
