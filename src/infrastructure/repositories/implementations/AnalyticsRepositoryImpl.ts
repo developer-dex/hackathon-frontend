@@ -4,6 +4,7 @@ import {
   AnalyticsResponseDto,
   AnalyticsResponseDtoData,
 } from "@/domain/models/analytics";
+import { LocalStorageServiceStatic } from "@/infrastructure/storage/interfaces/ILocalStorageService";
 import { LocalStorageService } from "@/infrastructure/storage/LocalStorageService";
 
 export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
@@ -12,20 +13,14 @@ export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
   private lastFetchTime: Map<TimePeriod, number> = new Map();
 
+  private localStorageService: LocalStorageServiceStatic;
   constructor() {
     this.apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    this.localStorageService = LocalStorageService;
   }
 
   private getAnalyticsEndpoint(period: TimePeriod): string {
     return `${this.apiBaseUrl}/api/analytics?timePeriod=${period}`;
-  }
-
-  private isCacheValid(period: TimePeriod): boolean {
-    const lastFetch = this.lastFetchTime.get(period);
-    if (!lastFetch) return false;
-
-    const now = Date.now();
-    return now - lastFetch < this.CACHE_TTL;
   }
 
   private updateCache(period: TimePeriod, data: AnalyticsResponseDto): void {
@@ -43,7 +38,7 @@ export class AnalyticsRepositoryImpl implements IAnalyticsRepository {
       // Clear expired cache
       this.clearCache(period);
 
-      const token = LocalStorageService.getAuthToken();
+      const token = this.localStorageService.getAuthToken();
       // Fetch fresh data
       const response = await fetch(this.getAnalyticsEndpoint(period), {
         method: "GET",

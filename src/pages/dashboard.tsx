@@ -16,7 +16,7 @@ import {
   AnalyticsResponseDtoData,
   TrendingWord,
 } from "@/domain/models/analytics";
-import { GetAnalyticsUseCase } from "@/application/useCases/analytics/GetAnalyticsUseCase";
+import { GetAnalyticsUseCase } from "@/application/useCases/analytics/getAnalyticsUseCase";
 import { AnalyticsRepositoryImpl } from "@/infrastructure/repositories/implementations/AnalyticsRepositoryImpl";
 import { toastError } from "@/application/shared/utils/toast";
 import { debounce } from "lodash";

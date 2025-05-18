@@ -1,3 +1,4 @@
+import { LocalStorageServiceStatic } from "./interfaces/ILocalStorageService";
 import { IUser } from "@/domain/models/auth";
 
 /**
@@ -9,38 +10,41 @@ interface IMinimalUserData {
   id: string;
 }
 
-export class LocalStorageService {
-  private static readonly AUTH_TOKEN_KEY = "auth_token";
-  private static readonly USER_KEY = "user";
+const AUTH_TOKEN_KEY = "auth_token";
+const USER_KEY = "user";
 
+/**
+ * LocalStorageService provides methods for managing authentication and user data in localStorage
+ */
+export const LocalStorageService: LocalStorageServiceStatic = {
   /**
    * Store authentication token in localStorage
    */
-  static setAuthToken(token: string): void {
+  setAuthToken(token: string): void {
     if (typeof window === "undefined") return;
-    localStorage.setItem(this.AUTH_TOKEN_KEY, token);
-  }
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+  },
 
   /**
    * Get authentication token from localStorage
    */
-  static getAuthToken(): string | null {
+  getAuthToken(): string | null {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem(this.AUTH_TOKEN_KEY);
-  }
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  },
 
   /**
    * Remove authentication token from localStorage
    */
-  static removeAuthToken(): void {
+  removeAuthToken(): void {
     if (typeof window === "undefined") return;
-    localStorage.removeItem(this.AUTH_TOKEN_KEY);
-  }
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  },
 
   /**
    * Store minimal user data in localStorage (only name and role)
    */
-  static setUser(user: IUser): void {
+  setUser(user: IUser): void {
     if (typeof window === "undefined") return;
 
     // Only store minimal user data (name, role, and id)
@@ -50,16 +54,16 @@ export class LocalStorageService {
       id: user.id, // including id for proper identification
     };
 
-    localStorage.setItem(this.USER_KEY, JSON.stringify(minimalUserData));
-  }
+    localStorage.setItem(USER_KEY, JSON.stringify(minimalUserData));
+  },
 
   /**
    * Get user data from localStorage
    * Returns a partial user object with only the stored fields
    */
-  static getUser(): IUser | null {
+  getUser(): IUser | null {
     if (typeof window === "undefined") return null;
-    const userStr = localStorage.getItem(this.USER_KEY);
+    const userStr = localStorage.getItem(USER_KEY);
     if (!userStr) return null;
     try {
       // Parse the minimal user data
@@ -79,22 +83,22 @@ export class LocalStorageService {
       console.error("Error parsing user data from localStorage:", error);
       return null;
     }
-  }
+  },
 
   /**
    * Remove user data from localStorage
    */
-  static removeUser(): void {
+  removeUser(): void {
     if (typeof window === "undefined") return;
-    localStorage.removeItem(this.USER_KEY);
-  }
+    localStorage.removeItem(USER_KEY);
+  },
 
   /**
    * Clear all auth-related data from localStorage
    */
-  static clearAuth(): void {
+  clearAuth(): void {
     if (typeof window === "undefined") return;
     this.removeAuthToken();
     this.removeUser();
-  }
-}
+  },
+};
