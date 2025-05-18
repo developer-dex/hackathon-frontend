@@ -1,4 +1,4 @@
-export type ETimePeriod = "Daily" | "Weekly" | "Monthly" | "Yearly";
+export type ETimePeriod = "Weekly" | "Quarterly" | "Monthly" | "Yearly";
 
 export interface ITimePeriodSelectorProps {
   value: ETimePeriod;
