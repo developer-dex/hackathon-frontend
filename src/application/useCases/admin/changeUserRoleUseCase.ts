@@ -3,7 +3,6 @@ import { IAdminRepository } from "@/infrastructure/repositories/interfaces/repos
 
 export class ChangeUserRoleUseCase {
   private readonly adminRepository: IAdminRepository;
-  private readonly apiPath = "/api/admin/users/change-role";
 
   constructor(adminRepository: IAdminRepository) {
     this.adminRepository = adminRepository;
