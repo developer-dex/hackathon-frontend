@@ -117,27 +117,19 @@ const AdminPage: React.FC<IAdminPageProps> = ({ user, onLogout }) => {
 
     try {
       setApproving(true);
-      console.log("🔍 Starting user approval process for:", selectedUserId);
 
       // Use the ApproveUserUseCase from the admin use case
-      console.log("📤 Using admin use case to approve user");
-
-      // Import the adminUseCase at the top if not already imported
       const updatedUser = await adminUseCase.approveUser.execute(
         selectedUserId
       );
-      console.log("📥 Use case response:", updatedUser);
 
       if (updatedUser) {
-        console.log("✅ User approval successful:", updatedUser);
         toast.success(
           `User ${selectedUserName} has been approved successfully`
         );
         // Refresh the users list
-        console.log("🔄 Refreshing users list");
         changePage(getCurrentPage()); // Reload current page
       } else {
-        console.log("❌ API request failed: User not updated");
         toast.error(`Failed to approve user: User not updated`);
       }
     } catch (error) {
@@ -183,25 +175,20 @@ const AdminPage: React.FC<IAdminPageProps> = ({ user, onLogout }) => {
 
     try {
       setChangingRole(true);
-      console.log(
-        `🔍 Changing role for user: ${roleChangeUserId} to ${roleChangeNewRole}`
-      );
 
       // Use the ChangeUserRoleUseCase from the admin use case
       const updatedUser = await adminUseCase.changeUserRole.execute(
         roleChangeUserId,
-        roleChangeNewRole as EUserRole
+        roleChangeNewRole.toString()
       );
 
       if (updatedUser) {
-        console.log("✅ User role change successful:", updatedUser);
         toast.success(
           `User ${roleChangeUserName}'s role has been changed to ${roleChangeNewRole} successfully`
         );
         // Refresh the users list
         changePage(getCurrentPage()); // Reload current page
       } else {
-        console.log("❌ API request failed: User role not updated");
         toast.error(`Failed to change user role`);
       }
     } catch (error) {
@@ -242,9 +229,6 @@ const AdminPage: React.FC<IAdminPageProps> = ({ user, onLogout }) => {
 
     try {
       setChangingTeam(true);
-      console.log(
-        `🔍 Changing team for user: ${teamChangeUserId} to team ${teamChangeNewTeamId}`
-      );
 
       // Use the ChangeUserTeamUseCase from the admin use case
       const updatedUser = await adminUseCase.changeUserTeam.execute(
@@ -253,7 +237,6 @@ const AdminPage: React.FC<IAdminPageProps> = ({ user, onLogout }) => {
       );
 
       if (updatedUser) {
-        console.log("✅ User team change successful:", updatedUser);
         // Find the new team name
         const newTeamName =
           teams.find((team) => team.id === teamChangeNewTeamId)?.name ||
@@ -265,7 +248,6 @@ const AdminPage: React.FC<IAdminPageProps> = ({ user, onLogout }) => {
         // Refresh the users list
         changePage(getCurrentPage()); // Reload current page
       } else {
-        console.log("❌ API request failed: User team not updated");
         toast.error(`Failed to change user team`);
       }
     } catch (error) {
@@ -288,7 +270,6 @@ const AdminPage: React.FC<IAdminPageProps> = ({ user, onLogout }) => {
 
   // Handle page change from TablePagination
   const handlePageChange = (event: unknown, newPage: number) => {
-    console.log(`Table pagination changing to page: ${newPage}`);
     changePage(newPage);
   };
 

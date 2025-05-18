@@ -11,6 +11,7 @@ import {
   Avatar,
   useTheme,
   useMediaQuery,
+  Hidden,
 } from "@mui/material";
 import Link from "next/link";
 import Image from "next/image";
@@ -392,24 +393,26 @@ const Header: React.FC<IHeaderProps> = ({
                           </Typography>
                         </Link>
                       </MenuItem>
-                      {user && user.role === EUserRole.TEAM_LEAD && (
-                        <MenuItem onClick={handleClose}>
-                          <Link href="/create-kudos" passHref>
-                            <Typography sx={{ color: "inherit" }}>
-                              Create Kudos
-                            </Typography>
-                          </Link>
-                        </MenuItem>
-                      )}
-                      {user && user.role === EUserRole.ADMIN && (
-                        <MenuItem onClick={handleClose}>
-                          <Link href="/admin" passHref>
-                            <Typography sx={{ color: "inherit" }}>
-                              Admin Panel
-                            </Typography>
-                          </Link>
-                        </MenuItem>
-                      )}
+                      <Hidden mdUp>
+                        {user && user.role === EUserRole.TEAM_LEAD && (
+                          <MenuItem onClick={handleClose}>
+                            <Link href="/create-kudos" passHref>
+                              <Typography sx={{ color: "inherit" }}>
+                                Create Kudos
+                              </Typography>
+                            </Link>
+                          </MenuItem>
+                        )}
+                        {user && user.role === EUserRole.ADMIN && (
+                          <MenuItem onClick={handleClose}>
+                            <Link href="/admin" passHref>
+                              <Typography sx={{ color: "inherit" }}>
+                                Admin Panel
+                              </Typography>
+                            </Link>
+                          </MenuItem>
+                        )}
+                      </Hidden>
                       <MenuItem
                         onClick={() => {
                           onLogout();

@@ -24,13 +24,11 @@ export const useUsers = () => {
     try {
       setLoading(true);
       setError(null);
-      console.log("Fetching users data with params:", paginationParams);
 
       const response: IPaginatedUsers = await kudosUseCases.getUsers.execute(
         paginationParams
       );
 
-      console.log("Users data fetched:", response);
       setUsers(response.users);
       setPagination({
         total: response.total,
@@ -53,18 +51,12 @@ export const useUsers = () => {
   // Function to change page
   const changePage = (pageIndex: number) => {
     // pageIndex is 0-based index of the page
-    const newOffset = pageIndex + 1;
-    console.log(
-      `Changing to page ${pageIndex + 1}, offset: ${newOffset}, limit: ${
-        pagination.limit
-      }`
-    );
+    const newOffset = pageIndex;
     fetchUsers({ offset: newOffset, limit: pagination.limit });
   };
 
   // Function to change items per page
   const changeItemsPerPage = (newLimit: number) => {
-    console.log(`Changing items per page to ${newLimit}`);
     fetchUsers({ offset: 0, limit: newLimit });
   };
 

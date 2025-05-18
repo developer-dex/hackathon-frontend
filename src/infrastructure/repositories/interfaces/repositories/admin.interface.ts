@@ -1,4 +1,4 @@
-import { IUser, EUserRole } from "@/domain/models/auth";
+import { IUser } from "@/domain/models/auth";
 
 export interface IAdminRepository {
   /**
@@ -24,7 +24,7 @@ export interface IAdminRepository {
    * @param role The new role for the user
    * @returns A promise that resolves to the updated user or null if failed
    */
-  updateUserRole(userId: string, role: EUserRole): Promise<IUser | null>;
+  updateUserRole(userId: string, role: string): Promise<IUser | null>;
 
   /**
    * Updates a user's team

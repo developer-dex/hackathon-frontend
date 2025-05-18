@@ -55,15 +55,11 @@ export class CreateKudosUseCase {
           : undefined,
       };
 
-      console.log("Submitting kudos data:", kudosData);
-
       const response = await httpClient.post<ICreateKudosResponse>(
         "/api/kudos",
         kudosData,
         config
       );
-
-      console.log("Kudos API response:", response.data);
 
       return {
         success: true,

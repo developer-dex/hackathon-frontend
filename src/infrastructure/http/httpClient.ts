@@ -23,13 +23,6 @@ const createHttpClient = (): AxiosInstance => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      console.log("📡 HTTP Request:", {
-        method: config.method?.toUpperCase(),
-        url: (config.baseURL || "") + (config.url || ""),
-        headers: config.headers,
-        data: config.data,
-      });
-
       return config;
     },
     (error) => {
@@ -41,11 +34,6 @@ const createHttpClient = (): AxiosInstance => {
   // Response interceptor for error handling
   axiosInstance.interceptors.response.use(
     (response) => {
-      console.log("📡 HTTP Response:", {
-        status: response.status,
-        statusText: response.statusText,
-        data: response.data,
-      });
       return response;
     },
     (error) => {

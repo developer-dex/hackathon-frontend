@@ -1,4 +1,4 @@
-import { IUser, EUserRole } from "@/domain/models/auth";
+import { IUser } from "@/domain/models/auth";
 import { IAdminRepository } from "../interfaces/repositories/admin.interface";
 import { httpClient } from "@/infrastructure/http/httpClient";
 import { LocalStorageService } from "@/infrastructure/storage/LocalStorageService";
@@ -62,22 +62,11 @@ export class AdminRepositoryImpl implements IAdminRepository {
     status: string
   ): Promise<IUser | null> {
     try {
-      console.log(
-        "📡 Repository: Making PATCH request to update user status:",
-        {
-          endpoint: `/api/admin/users/${userId}/verification-status`,
-          payload: { status },
-          headers: this.getAuthHeaders(),
-        }
-      );
-
       const response = await httpClient.patch<IApiResponse<IUser>>(
         `/api/admin/users/${userId}/verification-status`,
         { status },
         this.getAuthHeaders()
       );
-
-      console.log("📡 Repository: Received response:", response.data);
 
       if (!response.data.success) {
         console.error(
@@ -87,10 +76,6 @@ export class AdminRepositoryImpl implements IAdminRepository {
         return null;
       }
 
-      console.log(
-        "✅ Repository: Successfully updated user status:",
-        response.data.data
-      );
       return response.data.data;
     } catch (error) {
       console.error(
@@ -107,21 +92,18 @@ export class AdminRepositoryImpl implements IAdminRepository {
    * @param role The new role for the user
    * @returns A promise that resolves to the updated user or null if failed
    */
-  async updateUserRole(userId: string, role: EUserRole): Promise<IUser | null> {
+  async updateUserRole(userId: string, role: string): Promise<IUser | null> {
     try {
-      console.log("📡 Repository: Making PATCH request to update user role:", {
-        endpoint: `/api/admin/users/${userId}/role`,
-        payload: { role },
-        headers: this.getAuthHeaders(),
-      });
+      const requestBody = {
+        userId,
+        role,
+      };
 
       const response = await httpClient.patch<IApiResponse<IUser>>(
-        `/api/admin/users/${userId}/role`,
-        { role },
+        `/api/admin/users/change-role`,
+        requestBody,
         this.getAuthHeaders()
       );
-
-      console.log("📡 Repository: Received response:", response.data);
 
       if (!response.data.success) {
         console.error(
@@ -131,10 +113,6 @@ export class AdminRepositoryImpl implements IAdminRepository {
         return null;
       }
 
-      console.log(
-        "✅ Repository: Successfully updated user role:",
-        response.data.data
-      );
       return response.data.data;
     } catch (error) {
       console.error("❌ Repository: Error updating user role:", error);
@@ -150,19 +128,16 @@ export class AdminRepositoryImpl implements IAdminRepository {
    */
   async updateUserTeam(userId: string, teamId: string): Promise<IUser | null> {
     try {
-      console.log("📡 Repository: Making PATCH request to update user team:", {
-        endpoint: `/api/admin/users/${userId}/team`,
-        payload: { teamId },
-        headers: this.getAuthHeaders(),
-      });
+      const requestBody = {
+        userId,
+        teamId,
+      };
 
       const response = await httpClient.patch<IApiResponse<IUser>>(
-        `/api/admin/users/${userId}/team`,
-        { teamId },
+        `/api/admin/users/change-team`,
+        requestBody,
         this.getAuthHeaders()
       );
-
-      console.log("📡 Repository: Received response:", response.data);
 
       if (!response.data.success) {
         console.error(
@@ -172,10 +147,6 @@ export class AdminRepositoryImpl implements IAdminRepository {
         return null;
       }
 
-      console.log(
-        "✅ Repository: Successfully updated user team:",
-        response.data.data
-      );
       return response.data.data;
     } catch (error) {
       console.error("❌ Repository: Error updating user team:", error);

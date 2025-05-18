@@ -44,10 +44,6 @@ const CreateKudosPage: NextPage<ICreateKudosPageProps> = ({ user }) => {
     error: categoriesError,
   } = useCategories();
 
-  // Add debugging
-  console.log("Users data:", users);
-  console.log("Categories data:", categories);
-
   const [formData, setFormData] = useState({
     recipientId: "",
     recipientName: "",
@@ -121,7 +117,6 @@ const CreateKudosPage: NextPage<ICreateKudosPageProps> = ({ user }) => {
     event: React.SyntheticEvent,
     value: IUser | null
   ) => {
-    console.log("Selected user:", value);
     setSelectedUser(value);
     if (value) {
       setFormData((prevState) => ({
@@ -157,8 +152,6 @@ const CreateKudosPage: NextPage<ICreateKudosPageProps> = ({ user }) => {
         categoryId: formData.category,
         message: formData.message,
       };
-
-      console.log("Submitting kudos:", kudosData);
 
       // Call the create kudos use case
       const result = await kudosUseCases.createKudos.execute(kudosData);

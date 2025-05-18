@@ -120,14 +120,9 @@ export class GetUsersUseCase {
         };
       }
 
-      console.log("Sending request to fetch users with config:", config);
       const response = await httpClient.get<IUsersResponse>(
         "/api/admin/users",
         config
-      );
-      console.log(
-        "Users API response:",
-        JSON.stringify(response.data, null, 2)
       );
 
       // Process the response to ensure it matches the expected format
@@ -181,19 +176,10 @@ export class GetUsersUseCase {
               "Could not find users array in API response:",
               response.data
             );
+            throw new Error("Could not find users array in API response");
           }
         }
       }
-
-      console.log("Extracted users data:", usersData);
-      console.log(
-        "Pagination info - total:",
-        total,
-        "offset:",
-        offset,
-        "limit:",
-        limit
-      );
 
       // Map the users to ensure they have the correct structure
       const mappedUsers = usersData.map((user) => ({

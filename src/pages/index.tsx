@@ -93,7 +93,6 @@ const AuthenticatedContent: React.FC<AuthenticatedContentProps> = ({
 
   const handleApplyFilters = useCallback(
     (filters: KudosFilterValues) => {
-      console.log("Applying filters:", filters);
       // Pass the filters to the fetchKudosList function
       // This will trigger the API call with the filter parameters
       fetchKudosList(0, 9, filters);

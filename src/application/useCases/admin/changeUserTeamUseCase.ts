@@ -3,6 +3,7 @@ import { IAdminRepository } from "@/infrastructure/repositories/interfaces/repos
 
 export class ChangeUserTeamUseCase {
   private readonly adminRepository: IAdminRepository;
+  private readonly apiPath = "/api/admin/users/change-team";
 
   constructor(adminRepository: IAdminRepository) {
     this.adminRepository = adminRepository;
@@ -16,7 +17,6 @@ export class ChangeUserTeamUseCase {
    */
   async execute(userId: string, teamId: string): Promise<IUser | null> {
     try {
-      console.log(`Changing team for user ${userId} to team ${teamId}`);
       return await this.adminRepository.updateUserTeam(userId, teamId);
     } catch (error) {
       console.error("Error in ChangeUserTeamUseCase:", error);

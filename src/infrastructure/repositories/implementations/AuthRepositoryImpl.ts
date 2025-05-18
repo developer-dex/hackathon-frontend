@@ -79,8 +79,6 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
       const { user, token } = responseData.data;
 
-      console.log("User:", user);
-
       // Map the user data from API response to our domain model
       const mappedUser = {
         id: user.id,
@@ -120,7 +118,6 @@ export class AuthRepositoryImpl implements IAuthRepository {
 
       const responseData =
         (await response.json()) as IApiResponse<SignupResponseDTO>;
-      console.log("Signup response data:", responseData);
 
       // Check if the response has the expected structure
       if (!responseData.success) {
