@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { NextPage } from "next";
 import Head from "next/head";
 import {
@@ -17,6 +17,13 @@ import Link from "next/link";
 import { KudosWall } from "../components/organisms/KudosWall";
 import { useKudos } from "@/application/hooks/useKudos";
 import { useRouter } from "next/router";
+import {
+  KudosFilters,
+  KudosFilterValues,
+} from "@/components/molecules/KudosFilters";
+import { useUsers, useCategories, useTeams } from "@/application/hooks";
+import { ICategory as IKudosCategory } from "@/domain/entities/Kudos.types";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
 
 interface HomePageProps {
   user: IUser | null;
@@ -78,13 +85,46 @@ interface AuthenticatedContentProps {
 const AuthenticatedContent: React.FC<AuthenticatedContentProps> = ({
   user,
 }) => {
-  const { kudosList, isLoading, error, loadMore, hasMore } = useKudos();
+  const { kudosList, isLoading, error, loadMore, hasMore, fetchKudosList } =
+    useKudos();
+  const { users, loading: loadingUsers } = useUsers();
+  const { categories, loading: loadingCategories } = useCategories();
+  const { teams, loading: loadingTeams } = useTeams();
+
+  const handleApplyFilters = useCallback(
+    (filters: KudosFilterValues) => {
+      console.log("Applying filters:", filters);
+      // Pass the filters to the fetchKudosList function
+      // This will trigger the API call with the filter parameters
+      fetchKudosList(0, 9, filters);
+    },
+    [fetchKudosList]
+  );
+
+  // Convert categories to the expected format for KudosFilters
+  const formattedCategories: IKudosCategory[] = categories.map((cat) => ({
+    id: cat.id,
+    name: cat.name,
+    icon: cat.icon || "",
+    color: cat.color || "#1976d2",
+  }));
 
   return (
     <Box>
       <Typography variant="h4" component="h1" gutterBottom>
         Welcome back, {user.name}!
       </Typography>
+
+      {/* Kudos Filters */}
+      <KudosFilters
+        onApplyFilters={handleApplyFilters}
+        users={users}
+        categories={formattedCategories}
+        teams={teams}
+        loadingUsers={loadingUsers}
+        loadingCategories={loadingCategories}
+        loadingTeams={loadingTeams}
+      />
 
       {/* Kudos Wall displayed directly on the homepage */}
       <Box sx={{ mt: 4 }}>
@@ -97,6 +137,98 @@ const AuthenticatedContent: React.FC<AuthenticatedContentProps> = ({
             sx={{ p: 2, bgcolor: "#FFF4F4", borderRadius: 1, color: "#D32F2F" }}
           >
             <Typography>{error}</Typography>
+          </Box>
+        ) : kudosList.length === 0 ? (
+          <Box
+            sx={{
+              p: 6,
+              textAlign: "center",
+              borderRadius: 2,
+              backgroundColor: "#f9f9fb",
+              border: "1px dashed #d0d7de",
+              maxWidth: 700,
+              mx: "auto",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 2,
+              animation: "fadeIn 0.5s ease-in-out",
+              "@keyframes fadeIn": {
+                "0%": {
+                  opacity: 0,
+                  transform: "translateY(10px)",
+                },
+                "100%": {
+                  opacity: 1,
+                  transform: "translateY(0)",
+                },
+              },
+            }}
+          >
+            <Box
+              sx={{
+                width: 120,
+                height: 120,
+                backgroundColor: "rgba(108, 99, 255, 0.1)",
+                borderRadius: "50%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                mb: 2,
+              }}
+            >
+              <FilterAltIcon
+                sx={{ fontSize: 50, color: "primary.main", opacity: 0.7 }}
+              />
+            </Box>
+
+            <Typography variant="h5" color="primary.main" fontWeight={600}>
+              No kudos found
+            </Typography>
+
+            <Typography color="text.secondary" sx={{ maxWidth: 450, mb: 2 }}>
+              We couldn&apos;t find any kudos matching your current filter
+              criteria. Try adjusting your filters
+              {user.role === "Team Lead" && " or create a new kudos"}.
+            </Typography>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => {
+                  handleApplyFilters({
+                    senderId: "",
+                    receiverId: "",
+                    categoryId: "",
+                    teamId: "",
+                  });
+                }}
+                startIcon={<FilterAltIcon />}
+              >
+                Clear Filters
+              </Button>
+
+              {/* Only show Create Kudos button for Team Lead users */}
+              {user.role === "Team Lead" && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  href="/create-kudos"
+                  sx={{
+                    backgroundImage:
+                      "linear-gradient(90deg, #6C5CE7 0%, #6C5CE7 100%)",
+                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 4px 12px rgba(108, 92, 231, 0.3)",
+                    },
+                  }}
+                >
+                  Create New Kudos
+                </Button>
+              )}
+            </Box>
           </Box>
         ) : (
           <KudosWall
@@ -146,7 +278,7 @@ const WelcomeContent: React.FC = () => {
             fontSize: { xs: "2.2rem", md: "3rem" },
           }}
         >
-          Welcome to KUDOS App
+          Welcome to KUDOS wall
         </Typography>
 
         <Typography
@@ -159,7 +291,7 @@ const WelcomeContent: React.FC = () => {
         </Typography>
 
         <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mb: 6 }}>
-          <Link href="/dashboard" passHref>
+          <Link href="/login" passHref>
             <Button
               variant="contained"
               color="primary"

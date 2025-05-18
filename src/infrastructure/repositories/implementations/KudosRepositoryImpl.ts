@@ -32,15 +32,30 @@ export class KudosRepositoryImpl implements IKudosRepository {
    * Fetches a list of kudos
    * @param offset Page number (0-based) for pagination
    * @param limit Number of items per page
+   * @param filters Optional filters for the request (senderId, receiverId, etc.)
    * @returns A promise that resolves to an array of kudos or null if the request fails
    */
   async getKudosList(
     offset: number = 0,
-    limit: number = 9
+    limit: number = 9,
+    filters: Record<string, string> = {}
   ): Promise<IKudosApiResponse | null> {
     try {
+      // Build query string with pagination
+      const queryParams = new URLSearchParams({
+        offset: offset.toString(),
+        limit: limit.toString(),
+      });
+
+      // Add any filters that have values
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) {
+          queryParams.append(key, value);
+        }
+      });
+
       const response = await fetch(
-        `${this.apiBaseUrl}/api/kudos?offset=${offset}&limit=${limit}`,
+        `${this.apiBaseUrl}/api/kudos?${queryParams.toString()}`,
         {
           method: "GET",
           headers: this.getAuthHeaders(),

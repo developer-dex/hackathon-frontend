@@ -1,17 +1,23 @@
 import { useCallback, useEffect, useState } from "react";
 import { IKudos } from "@/domain/entities/Kudos.types";
 import { kudosUseCases } from "@/application/useCases/kudos/index";
+import { KudosFilterValues } from "@/components/molecules/KudosFilters";
 
 interface IUseKudosReturn {
   kudosList: IKudos[];
   isLoading: boolean;
   error: string | null;
   totalCount: number;
-  fetchKudosList: (offset?: number, limit?: number) => Promise<void>;
+  fetchKudosList: (
+    offset?: number,
+    limit?: number,
+    filters?: Partial<KudosFilterValues>
+  ) => Promise<void>;
   loadMore: () => Promise<void>;
   hasMore: boolean;
   offset: number;
   limit: number;
+  filters: Partial<KudosFilterValues>;
 }
 
 /**
@@ -25,9 +31,14 @@ export const useKudos = (): IUseKudosReturn => {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [offset, setOffset] = useState<number>(0);
   const [limit, setLimit] = useState<number>(9);
+  const [filters, setFilters] = useState<Partial<KudosFilterValues>>({});
 
   const fetchKudosList = useCallback(
-    async (newOffset?: number, newLimit?: number) => {
+    async (
+      newOffset?: number,
+      newLimit?: number,
+      newFilters?: Partial<KudosFilterValues>
+    ) => {
       setIsLoading(true);
       setError(null);
 
@@ -35,14 +46,32 @@ export const useKudos = (): IUseKudosReturn => {
         // Update state if new values are provided
         if (newOffset !== undefined) setOffset(newOffset);
         if (newLimit !== undefined) setLimit(newLimit);
+        if (newFilters !== undefined) {
+          setFilters(newFilters);
+          // When applying new filters, make sure we start with empty list to
+          // avoid showing stale data from previous filters
+          if (newOffset === 0) {
+            setKudosList([]);
+          }
+        }
 
         // Use the new values for the fetch, or use existing state values
         const finalOffset = newOffset !== undefined ? newOffset : offset;
         const finalLimit = newLimit !== undefined ? newLimit : limit;
+        const finalFilters = newFilters !== undefined ? newFilters : filters;
+
+        // Filter out empty string values from filters
+        const activeFilters: Record<string, string> = {};
+        Object.entries(finalFilters).forEach(([key, value]) => {
+          if (value && value !== "") {
+            activeFilters[key] = value;
+          }
+        });
 
         const result = await kudosUseCases.getKudosList.execute(
           finalOffset,
-          finalLimit
+          finalLimit,
+          activeFilters
         );
 
         if (result.error) {
@@ -60,12 +89,15 @@ export const useKudos = (): IUseKudosReturn => {
         setIsLoading(false);
       }
     },
-    [offset, limit]
+    [offset, limit, filters]
   );
 
   // Function to load more kudos (append to existing list)
   const loadMore = useCallback(async () => {
     if (isLoading || kudosList.length >= totalCount) return;
+
+    // Store current items to ensure we can append properly
+    const currentItems = [...kudosList];
 
     setIsLoading(true);
     setError(null);
@@ -74,16 +106,26 @@ export const useKudos = (): IUseKudosReturn => {
       // Increment page number (offset) by 1 to fetch the next page
       const nextOffset = offset + 1;
 
+      // Filter out empty string values from filters
+      const activeFilters: Record<string, string> = {};
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== "") {
+          activeFilters[key] = value;
+        }
+      });
+
       const result = await kudosUseCases.getKudosList.execute(
         nextOffset,
-        limit
+        limit,
+        activeFilters
       );
 
       if (result.error) {
         setError(result.error);
       } else {
-        // Append new kudos to the existing list
-        setKudosList((prevKudos) => [...prevKudos, ...result.kudosList]);
+        // Create new array with both current items and new items
+        const newList = [...currentItems, ...result.kudosList];
+        setKudosList(newList);
         setTotalCount(result.totalCount);
         setOffset(nextOffset);
       }
@@ -93,7 +135,7 @@ export const useKudos = (): IUseKudosReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [kudosList, totalCount, offset, limit, isLoading]);
+  }, [kudosList, totalCount, offset, limit, isLoading, filters]);
 
   // Calculate if there are more kudos to load
   // Add 1 to offset before multiplication since offset is 0-indexed (page 0 is first page)
@@ -114,5 +156,6 @@ export const useKudos = (): IUseKudosReturn => {
     hasMore,
     offset,
     limit,
+    filters,
   };
 };

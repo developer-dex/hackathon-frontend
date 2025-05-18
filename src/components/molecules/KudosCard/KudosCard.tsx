@@ -98,7 +98,6 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
           ⋮
         </button>
       </div>
-
       <div className={styles.recipientInfo}>
         <div className={styles.avatarContainer}>
           <Image
@@ -120,9 +119,7 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
           <div className={styles.recipientTeam}>{kudos.recipientTeam}</div>
         </div>
       </div>
-
       <div className={styles.message}>{kudos.message}</div>
-
       <div className={styles.illustration}>
         <Image
           src={theme.illustration}
@@ -133,7 +130,6 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
           unoptimized
         />
       </div>
-
       <div className={styles.sender}>
         <div className={styles.senderInfo}>
           {kudos.senderAvatarUrl && (

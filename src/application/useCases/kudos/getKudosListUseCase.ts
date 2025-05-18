@@ -1,18 +1,27 @@
 import { IKudos } from "@/domain/entities/Kudos.types";
 import { IKudosRepository } from "@/infrastructure/repositories/interfaces/repositories/kudos.interface";
 
+/**
+ * Use case for fetching the list of kudos
+ */
 export class GetKudosListUseCase {
+  /**
+   * Constructor
+   * @param kudosRepository The kudos repository instance
+   */
   constructor(private kudosRepository: IKudosRepository) {}
 
   /**
    * Executes the use case to fetch a list of kudos
    * @param offset Page number (0-based) for pagination
    * @param limit Number of items per page
+   * @param filters Optional filters for the request (senderId, receiverId, etc.)
    * @returns A promise that resolves to an array of kudos and pagination information
    */
   async execute(
     offset: number = 0,
-    limit: number = 9
+    limit: number = 9,
+    filters: Record<string, string> = {}
   ): Promise<{
     kudosList: IKudos[];
     totalCount: number;
@@ -22,7 +31,11 @@ export class GetKudosListUseCase {
   }> {
     try {
       // Call repository with the page number (offset)
-      const response = await this.kudosRepository.getKudosList(offset, limit);
+      const response = await this.kudosRepository.getKudosList(
+        offset,
+        limit,
+        filters
+      );
 
       if (!response) {
         console.error("Failed to fetch kudos list");

@@ -170,16 +170,17 @@ const LoginForm: React.FC<LoginFormProps> = ({
         type="submit"
         fullWidth
         variant="contained"
+        color="primary"
         disabled={isLoading}
         sx={{
           py: 1.5,
-          backgroundColor: "#4CAF50",
+          backgroundColor: "#6c63ff",
           borderRadius: "8px",
           textTransform: "uppercase",
           fontSize: "1rem",
           fontWeight: "bold",
           "&:hover": {
-            backgroundColor: "#388E3C",
+            backgroundColor: "#5a52d5",
           },
         }}
         data-testid={`${testId}-submit-button`}

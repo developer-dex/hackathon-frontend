@@ -5,11 +5,13 @@ export interface IKudosRepository {
    * Fetches a list of kudos
    * @param offset Page number (0-based) for pagination
    * @param limit Number of items per page
+   * @param filters Optional filters for the request (senderId, receiverId, etc.)
    * @returns A promise that resolves to an array of kudos or null if the request fails
    */
   getKudosList(
     offset?: number,
-    limit?: number
+    limit?: number,
+    filters?: Record<string, string>
   ): Promise<IKudosApiResponse | null>;
 
   /**

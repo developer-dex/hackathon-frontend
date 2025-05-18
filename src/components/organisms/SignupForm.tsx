@@ -368,17 +368,18 @@ const SignupForm: React.FC<SignupFormProps> = ({
       <Button
         type="submit"
         fullWidth
+        color="primary"
         variant="contained"
         disabled={isLoading}
         sx={{
           py: 1.5,
-          backgroundColor: "#4CAF50",
+          backgroundColor: "#6c63ff",
           borderRadius: "8px",
           textTransform: "uppercase",
           fontSize: "1rem",
           fontWeight: "bold",
           "&:hover": {
-            backgroundColor: "#388E3C",
+            backgroundColor: "#5a52d5",
           },
         }}
         data-testid={`${testId}-submit-button`}
