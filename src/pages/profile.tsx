@@ -3,13 +3,21 @@
 import React, { useEffect, useState } from "react";
 import { NextPage } from "next";
 import Head from "next/head";
-import { Container, Typography, Box, Paper, Divider } from "@mui/material";
+import {
+  Container,
+  Typography,
+  Box,
+  Paper,
+  Divider,
+  Button,
+} from "@mui/material";
 import { KudosWall } from "@/components/organisms/KudosWall";
 import { authUseCase } from "@/application/useCases";
 import { kudosUseCases } from "@/application/useCases";
 import { IKudos } from "@/domain/entities/Kudos.types";
 import MainLayout from "@/components/templates/MainLayout";
 import { IUser } from "@/domain/models/auth";
+import Link from "next/link";
 
 interface ProfilePageProps {
   user: IUser | null;
@@ -96,6 +104,43 @@ const ProfilePage: NextPage<ProfilePageProps> = ({ user, onLogout }) => {
                 Here are all the kudos you&apos;ve received from your
                 colleagues.
               </Typography>
+
+              <Button
+                variant="outlined"
+                color="primary"
+                component={Link}
+                href="/"
+                sx={{
+                  mt: 2,
+                  borderRadius: "8px",
+                  px: 3,
+                  py: 1,
+                  textTransform: "none",
+                  fontWeight: "medium",
+                  "&:hover": {
+                    backgroundColor: "rgba(108, 99, 255, 0.08)",
+                  },
+                }}
+                startIcon={
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M15 19L8 12L15 5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                }
+              >
+                Back to Home
+              </Button>
             </Box>
             <Divider sx={{ mb: 4 }} />
           </Paper>
