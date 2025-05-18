@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import styles from "./KudosWall.module.css";
 import { IKudosWallProps } from "./KudosWall.types";
 import { KudosCard } from "../../molecules/KudosCard";
@@ -12,6 +12,12 @@ export const KudosWall: React.FC<IKudosWallProps> = ({
   isLoading = false,
   ...props
 }) => {
+  // Debounce the onLoadMore function to prevent multiple calls
+  const handleLoadMore = useCallback(() => {
+    if (isLoading) return;
+    onLoadMore?.();
+  }, [onLoadMore, isLoading]);
+
   return (
     <div className={`${styles.kudosWallContainer} ${className}`} {...props}>
       <h1 className={styles.title}>{title}</h1>
@@ -28,7 +34,7 @@ export const KudosWall: React.FC<IKudosWallProps> = ({
         <div className={styles.viewMoreContainer}>
           <button
             className={styles.viewMoreButton}
-            onClick={onLoadMore}
+            onClick={handleLoadMore}
             disabled={isLoading}
           >
             {isLoading ? (

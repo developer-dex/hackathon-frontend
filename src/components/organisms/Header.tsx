@@ -16,6 +16,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { IUser } from "@/domain/models/auth";
 import { useRouter } from "next/router";
+import { EUserRole } from "@/domain/models/auth";
 
 interface IHeaderProps {
   user: IUser | null;
@@ -48,6 +49,7 @@ const Header: React.FC<IHeaderProps> = ({
 
   const isHomePage = router.pathname === "/";
   const isDashboardPage = router.pathname === "/dashboard";
+  const isAdminPage = router.pathname === "/admin";
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -205,11 +207,27 @@ const Header: React.FC<IHeaderProps> = ({
                       </Typography>
                     </Link>
                   </MenuItem>
-                  {user && user.role === "Team Lead" && (
+                  {user && user.role === EUserRole.TEAM_LEAD && (
                     <MenuItem onClick={handleMobileMenuClose}>
                       <Link href="/create-kudos" passHref>
                         <Typography sx={{ width: "100%", cursor: "pointer" }}>
                           Create Kudos
+                        </Typography>
+                      </Link>
+                    </MenuItem>
+                  )}
+                  {user && user.role === EUserRole.ADMIN && (
+                    <MenuItem onClick={handleMobileMenuClose}>
+                      <Link href="/admin" passHref>
+                        <Typography
+                          sx={{
+                            width: "100%",
+                            cursor: "pointer",
+                            color: isAdminPage ? "primary.main" : "inherit",
+                            fontWeight: isAdminPage ? "bold" : "normal",
+                          }}
+                        >
+                          Admin Panel
                         </Typography>
                       </Link>
                     </MenuItem>
@@ -282,8 +300,34 @@ const Header: React.FC<IHeaderProps> = ({
                 </Button>
               </Link>
 
+              {/* Admin Panel Link - Only visible to Admin users */}
+              {user && user.role === EUserRole.ADMIN && (
+                <Link href="/admin" passHref>
+                  <Button
+                    color="inherit"
+                    sx={{
+                      mx: 1,
+                      textTransform: "none",
+                      cursor: "pointer",
+                      color: isAdminPage ? "primary.main" : "text.primary",
+                      fontWeight: isAdminPage ? "bold" : "normal",
+                      borderBottom: isAdminPage ? "2px solid" : "none",
+                      borderColor: isAdminPage ? "primary.main" : "transparent",
+                      borderRadius: 0,
+                      paddingBottom: "4px",
+                      "&:hover": {
+                        backgroundColor: "transparent",
+                        color: "primary.main",
+                      },
+                    }}
+                  >
+                    Admin Panel
+                  </Button>
+                </Link>
+              )}
+
               {/* Team Lead Create Kudos Button */}
-              {user && user.role === "Team Lead" && (
+              {user && user.role === EUserRole.TEAM_LEAD && (
                 <Link href="/create-kudos" passHref>
                   <Button
                     color="primary"
@@ -348,11 +392,20 @@ const Header: React.FC<IHeaderProps> = ({
                           </Typography>
                         </Link>
                       </MenuItem>
-                      {user && user.role === "Team Lead" && (
+                      {user && user.role === EUserRole.TEAM_LEAD && (
                         <MenuItem onClick={handleClose}>
                           <Link href="/create-kudos" passHref>
                             <Typography sx={{ color: "inherit" }}>
                               Create Kudos
+                            </Typography>
+                          </Link>
+                        </MenuItem>
+                      )}
+                      {user && user.role === EUserRole.ADMIN && (
+                        <MenuItem onClick={handleClose}>
+                          <Link href="/admin" passHref>
+                            <Typography sx={{ color: "inherit" }}>
+                              Admin Panel
                             </Typography>
                           </Link>
                         </MenuItem>

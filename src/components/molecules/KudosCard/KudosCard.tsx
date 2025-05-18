@@ -72,6 +72,12 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
       ? kudos.category
       : "Recognition";
 
+  // Create dynamic styles
+  const headerStyle = {
+    backgroundColor: `${theme.textColor}10`,
+    borderBottom: `1px solid ${theme.textColor}20`,
+  };
+
   return (
     <div
       className={`${styles.kudosCard} ${className}`}
@@ -79,24 +85,37 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
       onClick={onClick}
       {...props}
     >
-      <div className={styles.cardHeader}>
+      <div
+        className={styles.cardTexture}
+        style={{
+          backgroundImage: `linear-gradient(to bottom right, ${theme.textColor}05, ${theme.textColor}10)`,
+        }}
+      />
+
+      <div className={styles.cardHeader} style={headerStyle}>
         <div className={styles.categoryName} style={{ color: theme.textColor }}>
-          <Image
-            src={theme.icon}
-            alt={displayCategoryName}
-            className={styles.categoryIcon}
-            width={20}
-            height={20}
-            unoptimized
-          />
-          {displayCategoryName}
+          <div className={styles.categoryIcon}>
+            <Image
+              src={theme.icon}
+              alt={displayCategoryName}
+              width={20}
+              height={20}
+              unoptimized
+            />
+          </div>
+          <span>{displayCategoryName}</span>
         </div>
-        <button
-          className={styles.menuButton}
-          style={{ color: theme.textColor }}
+        <div
+          className={styles.badgeContainer}
+          style={{
+            backgroundColor: `${theme.textColor}20`,
+            border: `1px solid ${theme.textColor}30`,
+          }}
         >
-          ⋮
-        </button>
+          <span className={styles.badgeText} style={{ color: theme.textColor }}>
+            Kudos
+          </span>
+        </div>
       </div>
       <div className={styles.recipientInfo}>
         <div className={styles.avatarContainer}>
@@ -120,12 +139,12 @@ export const KudosCard: React.FC<IKudosCardProps> = ({
         </div>
       </div>
       <div className={styles.message}>{kudos.message}</div>
-      <div className={styles.illustration}>
+      <div className={styles.illustration} style={{ marginBottom: "2px" }}>
         <Image
           src={theme.illustration}
           alt={displayCategoryName}
-          width={100}
-          height={100}
+          width={90}
+          height={90}
           style={{ margin: "auto" }}
           unoptimized
         />

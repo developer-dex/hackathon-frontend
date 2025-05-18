@@ -11,9 +11,17 @@ export interface IUser {
   role: string;
   isVerified?: boolean;
   verificationStatus?: string;
+  createdAt?: string;
   team?: {
     id: string;
     name: string;
+  };
+  teamId?: {
+    _id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
   };
 }
 
@@ -27,10 +35,18 @@ interface IUserRaw {
   role: string;
   isVerified?: boolean;
   verificationStatus?: string;
+  createdAt?: string;
   team?: {
     id: string;
     name: string;
-  }; // Allow additional properties
+  };
+  teamId?: {
+    _id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  };
 }
 
 // Type for data object that can have various properties
@@ -48,19 +64,47 @@ interface IUsersResponse {
   data: IDataObject | IUserRaw[];
   message: string;
   statusCode: number;
+  pagination?: {
+    total: number;
+    offset: number;
+    limit: number;
+  };
+}
+
+/**
+ * Pagination params for fetching users
+ */
+export interface IPaginationParams {
+  offset: number;
+  limit: number;
+}
+
+/**
+ * Result of fetching users with pagination
+ */
+export interface IPaginatedUsers {
+  users: IUser[];
+  total: number;
+  offset: number;
+  limit: number;
 }
 
 /**
  * Use case for getting all users
  */
 export class GetUsersUseCase {
-  async execute(): Promise<IUser[]> {
+  async execute(
+    paginationParams?: IPaginationParams
+  ): Promise<IPaginatedUsers> {
     try {
       // Get auth token from local storage
       const token = LocalStorageService.getAuthToken();
 
       // Create config for request with headers
-      const config = {
+      const config: {
+        headers?: { Authorization: string };
+        params?: { offset: number; limit: number };
+      } = {
         headers: token
           ? {
               Authorization: `Bearer ${token}`,
@@ -68,7 +112,15 @@ export class GetUsersUseCase {
           : undefined,
       };
 
-      console.log("Sending request to fetch users...");
+      // Add query parameters for pagination if provided
+      if (paginationParams) {
+        config.params = {
+          offset: paginationParams.offset,
+          limit: paginationParams.limit,
+        };
+      }
+
+      console.log("Sending request to fetch users with config:", config);
       const response = await httpClient.get<IUsersResponse>(
         "/api/admin/users",
         config
@@ -80,12 +132,28 @@ export class GetUsersUseCase {
 
       // Process the response to ensure it matches the expected format
       let usersData: IUserRaw[] = [];
+      let total = 0;
+      let offset = paginationParams?.offset || 0;
+      let limit = paginationParams?.limit || 10;
+
+      // Extract pagination info if available
+      if (response.data.pagination) {
+        total = response.data.pagination.total;
+        offset = response.data.pagination.offset;
+        limit = response.data.pagination.limit;
+      }
 
       if (Array.isArray(response.data.data)) {
         // If data is directly an array of users
         usersData = response.data.data;
       } else if (response.data.data && typeof response.data.data === "object") {
         const dataObj = response.data.data as IDataObject;
+
+        // Get total count if available
+        if (dataObj.total !== undefined) {
+          total = dataObj.total;
+        }
+
         // Check if data.users exists and is an array
         if ("users" in dataObj && Array.isArray(dataObj.users)) {
           usersData = dataObj.users;
@@ -118,19 +186,43 @@ export class GetUsersUseCase {
       }
 
       console.log("Extracted users data:", usersData);
+      console.log(
+        "Pagination info - total:",
+        total,
+        "offset:",
+        offset,
+        "limit:",
+        limit
+      );
 
       // Map the users to ensure they have the correct structure
-      return usersData.map((user) => ({
+      const mappedUsers = usersData.map((user) => ({
         id: user.id,
         name: user.name,
         email: user.email,
         role: user.role,
         isVerified: user.isVerified,
+        createdAt: user.createdAt,
         // Set the verification status based on isVerified if not explicitly provided
         verificationStatus:
           user.verificationStatus || (user.isVerified ? "Verified" : "Pending"),
-        team: user.team,
+        team:
+          user.team ||
+          (user.teamId
+            ? {
+                id: user.teamId._id,
+                name: user.teamId.name,
+              }
+            : undefined),
+        teamId: user.teamId,
       }));
+
+      return {
+        users: mappedUsers,
+        total,
+        offset,
+        limit,
+      };
     } catch (error) {
       console.error("Error fetching users:", error);
       throw new Error("Failed to fetch users");

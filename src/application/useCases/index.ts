@@ -34,3 +34,12 @@
 // Export all use cases
 export * from "./auth";
 export * from "./team";
+
+// Export auth use cases
+export { authUseCase } from "./auth";
+
+// Export kudos use cases
+export { kudosUseCases } from "./kudos";
+
+// Export admin use cases
+export { adminUseCase } from "./admin";

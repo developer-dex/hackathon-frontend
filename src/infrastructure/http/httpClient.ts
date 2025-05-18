@@ -23,17 +23,39 @@ const createHttpClient = (): AxiosInstance => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
+      console.log("📡 HTTP Request:", {
+        method: config.method?.toUpperCase(),
+        url: (config.baseURL || "") + (config.url || ""),
+        headers: config.headers,
+        data: config.data,
+      });
+
       return config;
     },
     (error) => {
+      console.error("❌ HTTP Request Error:", error);
       return Promise.reject(error);
     }
   );
 
   // Response interceptor for error handling
   axiosInstance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      console.log("📡 HTTP Response:", {
+        status: response.status,
+        statusText: response.statusText,
+        data: response.data,
+      });
+      return response;
+    },
     (error) => {
+      console.error("❌ HTTP Response Error:", {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      });
+
       if (error.response) {
         // Handle unauthorized responses
         if (error.response.status === 401) {

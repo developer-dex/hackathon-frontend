@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { IKudos } from "@/domain/entities/Kudos.types";
 import { kudosUseCases } from "@/application/useCases/kudos/index";
 import { KudosFilterValues } from "@/components/molecules/KudosFilters";
@@ -32,6 +32,7 @@ export const useKudos = (): IUseKudosReturn => {
   const [offset, setOffset] = useState<number>(0);
   const [limit, setLimit] = useState<number>(9);
   const [filters, setFilters] = useState<Partial<KudosFilterValues>>({});
+  const loadingRef = useRef<boolean>(false);
 
   const fetchKudosList = useCallback(
     async (
@@ -76,15 +77,30 @@ export const useKudos = (): IUseKudosReturn => {
 
         if (result.error) {
           setError(result.error);
-          setKudosList([]);
+          // Only clear the list if this is the first page (offset 0)
+          if (finalOffset === 0) {
+            setKudosList([]);
+          }
         } else {
-          setKudosList(result.kudosList);
+          // If this is the first page, replace the list, otherwise append
+          if (finalOffset === 0) {
+            setKudosList(result.kudosList);
+          } else {
+            // For additional pages, append to existing list
+            setKudosList((currentList) => [
+              ...currentList,
+              ...result.kudosList,
+            ]);
+          }
           setTotalCount(result.totalCount);
         }
       } catch (err) {
         console.error("Error in useKudos hook:", err);
         setError("An unexpected error occurred while fetching kudos");
-        setKudosList([]);
+        // Only clear the list if this is the first page (offset 0)
+        if (newOffset === 0 || (newOffset === undefined && offset === 0)) {
+          setKudosList([]);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -94,16 +110,18 @@ export const useKudos = (): IUseKudosReturn => {
 
   // Function to load more kudos (append to existing list)
   const loadMore = useCallback(async () => {
-    if (isLoading || kudosList.length >= totalCount) return;
+    // Prevent duplicate calls
+    if (loadingRef.current || isLoading || kudosList.length >= totalCount)
+      return;
 
-    // Store current items to ensure we can append properly
-    const currentItems = [...kudosList];
-
+    // Set both the ref and state to prevent duplicate calls
+    loadingRef.current = true;
     setIsLoading(true);
     setError(null);
 
     try {
-      // Increment page number (offset) by 1 to fetch the next page
+      // Store current items to ensure we can append properly
+      const currentItems = [...kudosList];
       const nextOffset = offset + 1;
 
       // Filter out empty string values from filters
@@ -134,6 +152,7 @@ export const useKudos = (): IUseKudosReturn => {
       setError("An unexpected error occurred while loading more kudos");
     } finally {
       setIsLoading(false);
+      loadingRef.current = false;
     }
   }, [kudosList, totalCount, offset, limit, isLoading, filters]);
 

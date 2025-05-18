@@ -1,25 +1,45 @@
 import { useState, useEffect } from "react";
-import { IUser } from "@/application/useCases/kudos/getUsersUseCase";
+import {
+  IUser,
+  IPaginationParams,
+  IPaginatedUsers,
+} from "@/application/useCases/kudos/getUsersUseCase";
 import { kudosUseCases } from "@/application/useCases/kudos/index";
 
 /**
- * Hook for accessing user data
- * @returns Object containing users, loading state, error state, and refresh function
+ * Hook for accessing user data with pagination
+ * @returns Object containing users, loading state, error state, pagination details and functions
  */
 export const useUsers = () => {
   const [users, setUsers] = useState<IUser[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    offset: 0,
+    limit: 10,
+  });
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (paginationParams?: IPaginationParams) => {
     try {
       setLoading(true);
       setError(null);
-      const usersData = await kudosUseCases.getUsers.execute();
-      setUsers(usersData);
+      console.log("Fetching users data with params:", paginationParams);
+
+      const response: IPaginatedUsers = await kudosUseCases.getUsers.execute(
+        paginationParams
+      );
+
+      console.log("Users data fetched:", response);
+      setUsers(response.users);
+      setPagination({
+        total: response.total,
+        offset: response.offset,
+        limit: response.limit,
+      });
     } catch (err) {
+      console.error("Error in useUsers hook:", err);
       setError(err instanceof Error ? err : new Error("Failed to fetch users"));
-      console.error("Error fetching users:", err);
     } finally {
       setLoading(false);
     }
@@ -27,13 +47,52 @@ export const useUsers = () => {
 
   // Fetch users on initial mount
   useEffect(() => {
-    fetchUsers();
+    fetchUsers({ offset: 0, limit: 10 });
   }, []);
+
+  // Function to change page
+  const changePage = (pageIndex: number) => {
+    // pageIndex is 0-based index of the page
+    const newOffset = pageIndex + 1;
+    console.log(
+      `Changing to page ${pageIndex + 1}, offset: ${newOffset}, limit: ${
+        pagination.limit
+      }`
+    );
+    fetchUsers({ offset: newOffset, limit: pagination.limit });
+  };
+
+  // Function to change items per page
+  const changeItemsPerPage = (newLimit: number) => {
+    console.log(`Changing items per page to ${newLimit}`);
+    fetchUsers({ offset: 0, limit: newLimit });
+  };
+
+  // Helper function to calculate current page
+  const getCurrentPage = () => {
+    return Math.floor(pagination.offset / pagination.limit);
+  };
+
+  // Helper function to check if there's a next page
+  const hasNextPage = () => {
+    return pagination.offset + pagination.limit < pagination.total;
+  };
+
+  // Helper function to check if there's a previous page
+  const hasPreviousPage = () => {
+    return pagination.offset > 0;
+  };
 
   return {
     users,
     loading,
     error,
+    pagination,
     refresh: fetchUsers,
+    changePage,
+    changeItemsPerPage,
+    getCurrentPage,
+    hasNextPage,
+    hasPreviousPage,
   };
 };
